@@ -9,6 +9,8 @@ No API key. No account. Read-only.
 [![npm](https://img.shields.io/npm/v/mcp-databnf)](https://www.npmjs.com/package/mcp-databnf)
 [![CI](https://github.com/smeet666/mcp-databnf/actions/workflows/ci.yml/badge.svg)](https://github.com/smeet666/mcp-databnf/actions/workflows/ci.yml)
 [![licence: MIT](https://img.shields.io/badge/licence-MIT-green.svg)](LICENSE)
+[![MCP Registry](https://img.shields.io/badge/MCP_Registry-listed-6E56CF)](https://registry.modelcontextprotocol.io/v0/servers?search=io.github.smeet666/mcp-databnf)
+[![Glama](https://glama.ai/mcp/servers/smeet666/mcp-databnf/badges/score.svg)](https://glama.ai/mcp/servers/smeet666/mcp-databnf)
 
 ---
 
