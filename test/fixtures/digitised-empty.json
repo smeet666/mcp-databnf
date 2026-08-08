@@ -1,0 +1,11 @@
+{
+  "head": {
+    "link": [],
+    "vars": ["rank", "edition", "title", "reproduction", "ocr", "depiction"]
+  },
+  "results": {
+    "distinct": false,
+    "ordered": true,
+    "bindings": []
+  }
+}

@@ -1,0 +1,187 @@
+{
+  "head": {
+    "link": [],
+    "vars": ["p", "o", "lang", "name"]
+  },
+  "results": {
+    "distinct": false,
+    "ordered": true,
+    "bindings": [
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "o": {
+          "type": "uri",
+          "value": "http://rdvocab.info/uri/schema/FRBRentitiesRDA/Work"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://purl.org/dc/terms/title"
+        },
+        "o": {
+          "type": "literal",
+          "value": "Le vent d'octobre",
+          "xml:lang": "fr"
+        },
+        "lang": {
+          "type": "literal",
+          "value": "fr"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#label"
+        },
+        "o": {
+          "type": "literal",
+          "value": "Le vent d'octobre"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://purl.org/dc/terms/date"
+        },
+        "o": {
+          "type": "literal",
+          "value": "1902"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://data.bnf.fr/ontology/bnf-onto/firstYear"
+        },
+        "o": {
+          "type": "typed-literal",
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "value": "1902"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://purl.org/dc/terms/creator"
+        },
+        "o": {
+          "type": "uri",
+          "value": "http://data.bnf.fr/ark:/12148/cb100000001#about"
+        },
+        "name": {
+          "type": "literal",
+          "value": "Camille Ardouin"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://purl.org/dc/terms/language"
+        },
+        "o": {
+          "type": "uri",
+          "value": "http://id.loc.gov/vocabulary/iso639-2/fre"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://rdvocab.info/Elements/formOfWork"
+        },
+        "o": {
+          "type": "uri",
+          "value": "http://data.bnf.fr/vocabulary/work-form/poesi"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://data.bnf.fr/ontology/bnf-onto/subject"
+        },
+        "o": {
+          "type": "literal",
+          "value": "Littératures"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://purl.org/dc/terms/subject"
+        },
+        "o": {
+          "type": "uri",
+          "value": "http://dewey.info/class/800/"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://rdvocab.info/Elements/statusOfIdentification"
+        },
+        "o": {
+          "type": "literal",
+          "value": "fully established",
+          "xml:lang": "en"
+        },
+        "lang": {
+          "type": "literal",
+          "value": "en"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://rdaregistry.info/Elements/w/#P10078"
+        },
+        "o": {
+          "type": "uri",
+          "value": "http://data.bnf.fr/ark:/12148/cb100000020#Expression"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://rdaregistry.info/Elements/w/#P10078"
+        },
+        "o": {
+          "type": "uri",
+          "value": "http://data.bnf.fr/ark:/12148/cb100000021#Expression"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://www.w3.org/2002/07/owl#sameAs"
+        },
+        "o": {
+          "type": "uri",
+          "value": "http://wikidata.org/entity/Q90000010"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#seeAlso"
+        },
+        "o": {
+          "type": "uri",
+          "value": "https://catalogue.bnf.fr/ark:/12148/cb100000010"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://xmlns.com/foaf/0.1/depiction"
+        },
+        "o": {
+          "type": "uri",
+          "value": "https://gallica.bnf.fr/ark:/12148/bpt6k90000010.thumbnail"
+        }
+      }
+    ]
+  }
+}

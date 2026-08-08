@@ -1,0 +1,47 @@
+name: A bug
+description: Something broke, hung, or would not start.
+labels: ["bug"]
+body:
+  - type: input
+    id: tool
+    attributes:
+      label: Which tool, if it was one
+      placeholder: list_editions
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+
+  - type: textarea
+    id: happened
+    attributes:
+      label: What happened
+      description: Include the error code in brackets if there was one.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: How to see it again
+      description: The arguments, and the client you called from.
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version and Node
+      description: "`npm ls -g mcp-databnf` and `node -v`."
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: "Set `BNF_LOG_LEVEL=debug` and rerun. Logs go to stderr."
+      render: shell

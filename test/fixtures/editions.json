@@ -1,0 +1,189 @@
+{
+  "head": {
+    "link": [],
+    "vars": [
+      "edition",
+      "title",
+      "date",
+      "year",
+      "publisher",
+      "place",
+      "editionStatement",
+      "extent",
+      "isbn",
+      "note",
+      "catalogue",
+      "reproduction",
+      "ocr"
+    ]
+  },
+  "results": {
+    "distinct": false,
+    "ordered": true,
+    "bindings": [
+      {
+        "edition": {
+          "type": "uri",
+          "value": "http://data.bnf.fr/ark:/12148/cb100000030#about"
+        },
+        "title": {
+          "type": "literal",
+          "value": "Le vent d'octobre"
+        },
+        "date": {
+          "type": "literal",
+          "value": "1902"
+        },
+        "year": {
+          "type": "typed-literal",
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "value": "1902"
+        },
+        "publisher": {
+          "type": "literal",
+          "value": "Vve Delarue et fils"
+        },
+        "place": {
+          "type": "literal",
+          "value": "Poitiers"
+        },
+        "extent": {
+          "type": "literal",
+          "value": "1 vol. (94 p.)"
+        },
+        "note": {
+          "type": "literal",
+          "value": "Note : Tiré à 300 exemplaires sur vergé"
+        },
+        "catalogue": {
+          "type": "uri",
+          "value": "https://catalogue.bnf.fr/ark:/12148/cb100000030"
+        },
+        "reproduction": {
+          "type": "uri",
+          "value": "https://gallica.bnf.fr/ark:/12148/bpt6k90000030"
+        }
+      },
+      {
+        "edition": {
+          "type": "uri",
+          "value": "http://data.bnf.fr/ark:/12148/cb100000030#about"
+        },
+        "title": {
+          "type": "literal",
+          "value": "Le vent d'octobre"
+        },
+        "date": {
+          "type": "literal",
+          "value": "1902"
+        },
+        "year": {
+          "type": "typed-literal",
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "value": "1902"
+        },
+        "publisher": {
+          "type": "literal",
+          "value": "Vve Delarue et fils"
+        },
+        "place": {
+          "type": "literal",
+          "value": "Poitiers"
+        },
+        "extent": {
+          "type": "literal",
+          "value": "1 vol. (94 p.)"
+        },
+        "note": {
+          "type": "literal",
+          "value": "Note : Tiré à 300 exemplaires sur vergé"
+        },
+        "catalogue": {
+          "type": "uri",
+          "value": "https://catalogue.bnf.fr/ark:/12148/cb100000030"
+        },
+        "reproduction": {
+          "type": "uri",
+          "value": "https://gallica.bnf.fr/ark:/12148/btv1b90000030"
+        }
+      },
+      {
+        "edition": {
+          "type": "uri",
+          "value": "http://data.bnf.fr/ark:/12148/cb100000031#about"
+        },
+        "title": {
+          "type": "literal",
+          "value": "Le vent d'octobre"
+        },
+        "date": {
+          "type": "literal",
+          "value": "1978"
+        },
+        "year": {
+          "type": "typed-literal",
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "value": "1978"
+        },
+        "publisher": {
+          "type": "literal",
+          "value": "Éditions du Cormier"
+        },
+        "place": {
+          "type": "literal",
+          "value": "Bruxelles"
+        },
+        "editionStatement": {
+          "type": "literal",
+          "value": "2e édition revue"
+        },
+        "extent": {
+          "type": "literal",
+          "value": "1 vol. (112 p.)"
+        },
+        "isbn": {
+          "type": "literal",
+          "value": "2-87042-000-1"
+        },
+        "catalogue": {
+          "type": "uri",
+          "value": "https://catalogue.bnf.fr/ark:/12148/cb100000031"
+        },
+        "ocr": {
+          "type": "uri",
+          "value": "https://gallica.bnf.fr/ark:/12148/bd6t90000031"
+        }
+      },
+      {
+        "edition": {
+          "type": "uri",
+          "value": "http://data.bnf.fr/ark:/12148/cb100000032#about"
+        },
+        "title": {
+          "type": "literal",
+          "value": "Le vent d'octobre"
+        },
+        "date": {
+          "type": "literal",
+          "value": "[s.d.]"
+        },
+        "publisher": {
+          "type": "literal",
+          "value": "[s.n.]"
+        },
+        "place": {
+          "type": "literal",
+          "value": "[S.l.]"
+        },
+        "extent": {
+          "type": "literal",
+          "value": "2 disques : 33 t ; 30 cm"
+        },
+        "catalogue": {
+          "type": "uri",
+          "value": "https://catalogue.bnf.fr/ark:/12148/cb100000032"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,80 @@
+name: Publish to MCP registry
+
+# Runs after the npm publish, because the registry rejects a server.json whose
+# version is not already on npm. Also dispatchable, to catch up a version whose
+# registry entry was missed.
+on:
+  workflow_run:
+    workflows: ["Publish"]
+    types: [completed]
+  workflow_dispatch:
+
+jobs:
+  registry:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
+    permissions:
+      contents: read
+      # The registry trusts this repository's OIDC identity, which is what
+      # replaces the interactive device-code login.
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install mcp-publisher
+        run: |
+          curl -fsSL "https://github.com/modelcontextprotocol/registry/releases/latest/download/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/').tar.gz" \
+            | tar xz mcp-publisher
+          sudo mv mcp-publisher /usr/local/bin/
+      # fileSha256 is required for an MCPB package and cannot exist before the
+      # bundle does, so it is filled in here from the file the release carries
+      # rather than committed as a value that would go stale on every build.
+      - name: Stamp the bundle hash into server.json
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(node -p "require('./server.json').version")
+          asset="${{ github.event.repository.name }}-$version.mcpb"
+          repo="${{ github.repository }}"
+          url="https://github.com/$repo/releases/download/v$version/$asset"
+          if gh release download "v$version" --pattern "$asset" --dir . 2>/dev/null; then
+            sha=$(sha256sum "$asset" | cut -d" " -f1)
+            node -e "
+              const fs = require('fs');
+              const doc = JSON.parse(fs.readFileSync('server.json', 'utf8'));
+              for (const pkg of doc.packages ?? []) {
+                if (pkg.registryType !== 'mcpb') continue;
+                pkg.fileSha256 = '$sha';
+                // The address carries a version of its own, and a hand-written
+                // one survives a version bump: the registry then advertises one
+                // release and serves the file of another, or names a release
+                // that was skipped and answers 404. Deriving it here keeps the
+                // two halves of the entry saying the same thing.
+                pkg.identifier = '$url';
+                pkg.version = '$version';
+              }
+              fs.writeFileSync('server.json', JSON.stringify(doc, null, 2) + '\n');
+            "
+            echo "Stamped $sha and pointed the bundle at v$version."
+          else
+            echo "No bundle on the release; dropping the mcpb package from this publish."
+            node -e "
+              const fs = require('fs');
+              const doc = JSON.parse(fs.readFileSync('server.json', 'utf8'));
+              doc.packages = (doc.packages ?? []).filter((p) => p.registryType !== 'mcpb');
+              fs.writeFileSync('server.json', JSON.stringify(doc, null, 2) + '\n');
+            "
+          fi
+      - run: mcp-publisher login github-oidc
+      # Same reason as the npm step: a tag can be recreated, and the registry
+      # rejects a duplicate version rather than treating it as a no-op.
+      - name: Publish unless the registry already has this version
+        run: |
+          name=$(node -p "require('./server.json').name")
+          version=$(node -p "require('./server.json').version")
+          published=$(curl -sf "https://registry.modelcontextprotocol.io/v0/servers?search=$name" \
+            | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).servers.map(r => (r.server||r).version).join(' ')")
+          if echo " $published " | grep -q " $version "; then
+            echo "The registry already serves $name $version; nothing to publish."
+          else
+            mcp-publisher publish
+          fi

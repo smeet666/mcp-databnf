@@ -1,0 +1,116 @@
+{
+  "head": {
+    "link": [],
+    "vars": ["work", "title", "date", "status", "creator", "creatorName"]
+  },
+  "results": {
+    "distinct": false,
+    "ordered": true,
+    "bindings": [
+      {
+        "work": {
+          "type": "uri",
+          "value": "http://data.bnf.fr/temp-work/a1b2c3d4e5f60718293a4b5c6d7e8f90/#about"
+        },
+        "title": {
+          "type": "literal",
+          "value": "Lire « Le vent d'octobre » de Camille Ardouin",
+          "xml:lang": "fr"
+        },
+        "date": {
+          "type": "literal",
+          "value": "1994"
+        },
+        "status": {
+          "type": "literal",
+          "value": "provisional",
+          "xml:lang": "en"
+        },
+        "creator": {
+          "type": "uri",
+          "value": "http://data.bnf.fr/ark:/12148/cb100000009#about"
+        },
+        "creatorName": {
+          "type": "literal",
+          "value": "Bertrand Kessel"
+        }
+      },
+      {
+        "work": {
+          "type": "uri",
+          "value": "http://data.bnf.fr/ark:/12148/cb100000010#about"
+        },
+        "title": {
+          "type": "literal",
+          "value": "Le vent d'octobre",
+          "xml:lang": "fr"
+        },
+        "date": {
+          "type": "literal",
+          "value": "1902"
+        },
+        "status": {
+          "type": "literal",
+          "value": "fully established",
+          "xml:lang": "en"
+        },
+        "creator": {
+          "type": "uri",
+          "value": "http://data.bnf.fr/ark:/12148/cb100000001#about"
+        },
+        "creatorName": {
+          "type": "literal",
+          "value": "Camille Ardouin"
+        }
+      },
+      {
+        "work": {
+          "type": "uri",
+          "value": "http://data.bnf.fr/ark:/12148/cb100000010#about"
+        },
+        "title": {
+          "type": "literal",
+          "value": "Le vent d'octobre",
+          "xml:lang": "fr"
+        },
+        "date": {
+          "type": "literal",
+          "value": "1902"
+        },
+        "status": {
+          "type": "literal",
+          "value": "fully established",
+          "xml:lang": "en"
+        },
+        "creator": {
+          "type": "uri",
+          "value": "http://data.bnf.fr/ark:/12148/cb100000011#about"
+        },
+        "creatorName": {
+          "type": "literal",
+          "value": "Yvonne Trélat"
+        }
+      },
+      {
+        "work": {
+          "type": "uri",
+          "value": "http://data.bnf.fr/ark:/12148/cb100000012#about"
+        },
+        "title": {
+          "type": "literal",
+          "value": "Chanson du vent d'octobre",
+          "xml:lang": "fr"
+        },
+        "date": {
+          "type": "literal",
+          "value": "1911"
+        },
+        "status": {
+          "type": "literal",
+          "value": "fully established",
+          "xml:lang": "en"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,73 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.smeet666/mcp-databnf",
+  "description": "Search the BnF open catalogue: authors, works, editions and links to what is digitised.",
+  "websiteUrl": "https://github.com/smeet666/mcp-databnf#readme",
+  "icons": [
+    {
+      "src": "https://raw.githubusercontent.com/smeet666/mcp-databnf/main/assets/icon-128.png",
+      "mimeType": "image/png",
+      "sizes": ["128x128"]
+    },
+    {
+      "src": "https://raw.githubusercontent.com/smeet666/mcp-databnf/main/assets/icon-512.png",
+      "mimeType": "image/png",
+      "sizes": ["512x512"]
+    }
+  ],
+  "repository": {
+    "url": "https://github.com/smeet666/mcp-databnf",
+    "source": "github"
+  },
+  "version": "1.0.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "mcp-databnf",
+      "version": "1.0.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "BNF_USER_AGENT",
+          "description": "Identify your own client. The project's own identifier is appended, so the BnF can always reach a person.",
+          "isRequired": false
+        },
+        {
+          "name": "BNF_MIN_INTERVAL_MS",
+          "description": "Minimum milliseconds between requests. Default 3000, which is also the floor.",
+          "isRequired": false
+        },
+        {
+          "name": "BNF_TIMEOUT_MS",
+          "description": "Deadline for one SPARQL query, in milliseconds. Default 60000.",
+          "isRequired": false
+        },
+        {
+          "name": "BNF_MAX_RETRIES",
+          "description": "Attempts after a busy answer. Default 3.",
+          "isRequired": false
+        },
+        {
+          "name": "BNF_CACHE_TTL_MS",
+          "description": "How long an answer is kept in memory, in milliseconds. Default 900000. Zero turns the cache off.",
+          "isRequired": false
+        },
+        {
+          "name": "BNF_LOG_LEVEL",
+          "description": "silent, error, info or debug. Default error. Logs go to stderr.",
+          "isRequired": false
+        }
+      ]
+    },
+    {
+      "registryType": "mcpb",
+      "identifier": "https://github.com/smeet666/mcp-databnf/releases/download/v1.0.0/mcp-databnf-1.0.0.mcpb",
+      "version": "1.0.0",
+      "transport": {
+        "type": "stdio"
+      }
+    }
+  ]
+}

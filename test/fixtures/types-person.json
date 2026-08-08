@@ -1,0 +1,18 @@
+{
+  "head": {
+    "link": [],
+    "vars": ["type"]
+  },
+  "results": {
+    "distinct": false,
+    "ordered": true,
+    "bindings": [
+      {
+        "type": {
+          "type": "uri",
+          "value": "http://xmlns.com/foaf/0.1/Person"
+        }
+      }
+    ]
+  }
+}

@@ -1,0 +1,72 @@
+name: Publish
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Lets the runner mint the OIDC token npm exchanges for publish rights.
+      # This is also what backs the provenance attestation.
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: https://registry.npmjs.org
+      # Trusted publishing needs npm 11.5.1 or later; setup-node still ships 10.x.
+      - run: npm install -g npm@latest
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      # No NODE_AUTH_TOKEN: authentication comes from the OIDC token, so there
+      # is no long-lived npm secret stored on this repository.
+      # Re-tagging a released version must not fail the run: the publish is the
+      # side effect, and npm has it already.
+      - name: Publish unless npm already has this version
+        run: |
+          version=$(node -p "require('./package.json').version")
+          name=$(node -p "require('./package.json').name")
+          if npm view "$name@$version" version >/dev/null 2>&1; then
+            echo "npm already serves $name@$version; nothing to publish."
+          else
+            npm publish --provenance --access public
+          fi
+
+  bundle:
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Dependencies are compiled in, so the bundle is one file rather than a
+      # copy of node_modules.
+      - run: npx tsup --config tsup.bundle.config.ts
+      - name: Assemble the bundle
+        run: |
+          mkdir -p stage/server stage/assets
+          cp bundle/index.js stage/server/
+          cp packaging/manifest.json README.md LICENSE stage/
+          cp assets/icon-512.png stage/assets/
+      - name: Pack and attach it to the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(node -p "require('./package.json').version")
+          name=$(node -p "require('./package.json').name")
+          npx --yes @anthropic-ai/mcpb@latest pack stage "$name-$version.mcpb"
+          gh release view "v$version" >/dev/null 2>&1 \
+            || gh release create "v$version" --title "v$version" --notes "See CHANGELOG.md."
+          gh release upload "v$version" "$name-$version.mcpb" --clobber

@@ -1,0 +1,24 @@
+{
+  "head": {
+    "link": [],
+    "vars": ["type"]
+  },
+  "results": {
+    "distinct": false,
+    "ordered": true,
+    "bindings": [
+      {
+        "type": {
+          "type": "uri",
+          "value": "http://rdvocab.info/uri/schema/FRBRentitiesRDA/Work"
+        }
+      },
+      {
+        "type": {
+          "type": "uri",
+          "value": "http://rdaregistry.info/Elements/c/#C10001"
+        }
+      }
+    ]
+  }
+}

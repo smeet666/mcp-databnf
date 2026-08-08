@@ -1,0 +1,42 @@
+{
+  "head": {
+    "link": [],
+    "vars": ["person", "name"]
+  },
+  "results": {
+    "distinct": false,
+    "ordered": true,
+    "bindings": [
+      {
+        "person": {
+          "type": "uri",
+          "value": "http://data.bnf.fr/ark:/12148/cb100000001#about"
+        },
+        "name": {
+          "type": "literal",
+          "value": "Camille Ardouin"
+        }
+      },
+      {
+        "person": {
+          "type": "uri",
+          "value": "http://data.bnf.fr/ark:/12148/cb100000002#about"
+        },
+        "name": {
+          "type": "literal",
+          "value": "Camille Ardouin"
+        }
+      },
+      {
+        "person": {
+          "type": "uri",
+          "value": "http://data.bnf.fr/ark:/12148/cb100000003#about"
+        },
+        "name": {
+          "type": "literal",
+          "value": "Hortense Ardouin"
+        }
+      }
+    ]
+  }
+}

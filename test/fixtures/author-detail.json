@@ -1,0 +1,339 @@
+{
+  "head": {
+    "link": [],
+    "vars": ["p", "o", "lang"]
+  },
+  "results": {
+    "distinct": false,
+    "ordered": true,
+    "bindings": [
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "o": {
+          "type": "uri",
+          "value": "http://xmlns.com/foaf/0.1/Person"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://xmlns.com/foaf/0.1/name"
+        },
+        "o": {
+          "type": "literal",
+          "value": "Camille Ardouin"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://xmlns.com/foaf/0.1/givenName"
+        },
+        "o": {
+          "type": "literal",
+          "value": "Camille"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://xmlns.com/foaf/0.1/familyName"
+        },
+        "o": {
+          "type": "literal",
+          "value": "Ardouin"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://vocab.org/bio/0.1/birth"
+        },
+        "o": {
+          "type": "literal",
+          "value": "1871-03-04"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://vocab.org/bio/0.1/death"
+        },
+        "o": {
+          "type": "literal",
+          "value": "1933-09-19"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://data.bnf.fr/ontology/bnf-onto/firstYear"
+        },
+        "o": {
+          "type": "typed-literal",
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "value": "1871"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://data.bnf.fr/ontology/bnf-onto/lastYear"
+        },
+        "o": {
+          "type": "typed-literal",
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "value": "1933"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://rdvocab.info/ElementsGr2/placeOfBirth"
+        },
+        "o": {
+          "type": "literal",
+          "value": "Availles-en-Ombre (Vienne)"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://rdvocab.info/ElementsGr2/placeOfDeath"
+        },
+        "o": {
+          "type": "literal",
+          "value": "Marsanne (Drôme)"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://rdvocab.info/ElementsGr2/biographicalInformation"
+        },
+        "o": {
+          "type": "literal",
+          "value": "Poète"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://rdaregistry.info/Elements/a/#P50113"
+        },
+        "o": {
+          "type": "literal",
+          "value": "Poète"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://rdvocab.info/ElementsGr2/languageOfThePerson"
+        },
+        "o": {
+          "type": "uri",
+          "value": "http://id.loc.gov/vocabulary/iso639-2/fre"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://rdvocab.info/ElementsGr2/countryAssociatedWithThePerson"
+        },
+        "o": {
+          "type": "uri",
+          "value": "http://id.loc.gov/vocabulary/countries/fr"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://rdvocab.info/ElementsGr2/fieldOfActivityOfThePerson"
+        },
+        "o": {
+          "type": "uri",
+          "value": "http://dewey.info/class/800/"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://rdvocab.info/ElementsGr2/fieldOfActivityOfThePerson"
+        },
+        "o": {
+          "type": "literal",
+          "value": "Littératures"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://www.w3.org/2002/07/owl#sameAs"
+        },
+        "o": {
+          "type": "uri",
+          "value": "http://viaf.org/viaf/900000001"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://www.w3.org/2002/07/owl#sameAs"
+        },
+        "o": {
+          "type": "uri",
+          "value": "http://www.idref.fr/090000001/id"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://www.w3.org/2002/07/owl#sameAs"
+        },
+        "o": {
+          "type": "uri",
+          "value": "http://fr.dbpedia.org/resource/Camille_Ardouin"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://www.w3.org/2002/07/owl#sameAs"
+        },
+        "o": {
+          "type": "uri",
+          "value": "http://data.bnf.fr/ark:/12148/cb100000001#foaf:Person"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://www.w3.org/2004/02/skos/core#exactMatch"
+        },
+        "o": {
+          "type": "uri",
+          "value": "http://wikidata.org/entity/Q90000001"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://isni.org/ontology#identifierValid"
+        },
+        "o": {
+          "type": "literal",
+          "value": "0000000100000001"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://xmlns.com/foaf/0.1/depiction"
+        },
+        "o": {
+          "type": "uri",
+          "value": "https://gallica.bnf.fr/ark:/12148/btv1b90000001.thumbnail"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://xmlns.com/foaf/0.1/depiction"
+        },
+        "o": {
+          "type": "uri",
+          "value": "https://gallica.bnf.fr/ark:/12148/btv1b90000002/f3.item.thumbnail"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://xmlns.com/foaf/0.1/depiction"
+        },
+        "o": {
+          "type": "uri",
+          "value": "http://commons.wikimedia.org/wiki/Special:FilePath/Ardouin.png"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://www.w3.org/2004/02/skos/core#prefLabel"
+        },
+        "o": {
+          "type": "literal",
+          "value": "Camille Ardouin (1871-1933)",
+          "xml:lang": "fr"
+        },
+        "lang": {
+          "type": "literal",
+          "value": "fr"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://www.w3.org/2004/02/skos/core#altLabel"
+        },
+        "o": {
+          "type": "literal",
+          "value": "Camille Ardouin de Marsanne (1871-1933)",
+          "xml:lang": "fr"
+        },
+        "lang": {
+          "type": "literal",
+          "value": "fr"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://www.w3.org/2004/02/skos/core#altLabel"
+        },
+        "o": {
+          "type": "literal",
+          "value": "Kamiru Arudouan (1871-1933)",
+          "xml:lang": "ja"
+        },
+        "lang": {
+          "type": "literal",
+          "value": "ja"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://purl.org/dc/terms/created"
+        },
+        "o": {
+          "type": "literal",
+          "value": "1979-04-11"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://purl.org/dc/terms/modified"
+        },
+        "o": {
+          "type": "literal",
+          "value": "2023-11-02"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#seeAlso"
+        },
+        "o": {
+          "type": "uri",
+          "value": "https://catalogue.bnf.fr/ark:/12148/cb100000001"
+        }
+      }
+    ]
+  }
+}

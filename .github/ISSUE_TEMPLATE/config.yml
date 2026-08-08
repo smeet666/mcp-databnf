@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: A question about the BnF catalogue itself
+    url: https://data.bnf.fr/
+    about: What a record holds, and how the BnF models it, is documented by the BnF.

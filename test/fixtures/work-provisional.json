@@ -1,0 +1,76 @@
+{
+  "head": {
+    "link": [],
+    "vars": ["p", "o", "lang", "name"]
+  },
+  "results": {
+    "distinct": false,
+    "ordered": true,
+    "bindings": [
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "o": {
+          "type": "uri",
+          "value": "http://rdvocab.info/uri/schema/FRBRentitiesRDA/Work"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://purl.org/dc/terms/title"
+        },
+        "o": {
+          "type": "literal",
+          "value": "Lire « Le vent d'octobre » de Camille Ardouin",
+          "xml:lang": "fr"
+        },
+        "lang": {
+          "type": "literal",
+          "value": "fr"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://purl.org/dc/terms/date"
+        },
+        "o": {
+          "type": "literal",
+          "value": "1994"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://rdvocab.info/Elements/statusOfIdentification"
+        },
+        "o": {
+          "type": "literal",
+          "value": "provisional",
+          "xml:lang": "en"
+        },
+        "lang": {
+          "type": "literal",
+          "value": "en"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://purl.org/dc/terms/creator"
+        },
+        "o": {
+          "type": "uri",
+          "value": "http://data.bnf.fr/ark:/12148/cb100000009#about"
+        },
+        "name": {
+          "type": "literal",
+          "value": "Bertrand Kessel"
+        }
+      }
+    ]
+  }
+}

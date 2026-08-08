@@ -1,0 +1,11 @@
+{
+  "head": {
+    "link": [],
+    "vars": ["p", "o", "lang", "name"]
+  },
+  "results": {
+    "distinct": false,
+    "ordered": true,
+    "bindings": []
+  }
+}

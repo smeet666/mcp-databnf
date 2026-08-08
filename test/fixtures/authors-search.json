@@ -1,0 +1,80 @@
+{
+  "head": {
+    "link": [],
+    "vars": ["person", "name", "label", "birthYear", "deathYear", "role"]
+  },
+  "results": {
+    "distinct": false,
+    "ordered": true,
+    "bindings": [
+      {
+        "person": {
+          "type": "uri",
+          "value": "http://data.bnf.fr/ark:/12148/cb100000001#about"
+        },
+        "name": {
+          "type": "literal",
+          "value": "Camille Ardouin"
+        },
+        "label": {
+          "type": "literal",
+          "value": "Camille Ardouin (1871-1933)",
+          "xml:lang": "fr"
+        },
+        "birthYear": {
+          "type": "typed-literal",
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "value": "1871"
+        },
+        "deathYear": {
+          "type": "typed-literal",
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "value": "1933"
+        },
+        "role": {
+          "type": "literal",
+          "value": "Poète"
+        }
+      },
+      {
+        "person": {
+          "type": "uri",
+          "value": "http://data.bnf.fr/ark:/12148/cb100000002#about"
+        },
+        "name": {
+          "type": "literal",
+          "value": "Camille Ardouin"
+        }
+      },
+      {
+        "person": {
+          "type": "uri",
+          "value": "http://data.bnf.fr/ark:/12148/cb100000003#about"
+        },
+        "name": {
+          "type": "literal",
+          "value": "Hortense Ardouin"
+        },
+        "label": {
+          "type": "literal",
+          "value": "Hortense Ardouin (1902-1988)",
+          "xml:lang": "fr"
+        },
+        "birthYear": {
+          "type": "typed-literal",
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "value": "1902"
+        },
+        "deathYear": {
+          "type": "typed-literal",
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "value": "1988"
+        },
+        "role": {
+          "type": "literal",
+          "value": "Botaniste"
+        }
+      }
+    ]
+  }
+}

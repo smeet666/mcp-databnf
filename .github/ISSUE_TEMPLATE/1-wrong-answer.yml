@@ -1,0 +1,51 @@
+name: A wrong answer
+description: The server said something the BnF catalogue does not say.
+labels: ["wrong answer"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        This is the most useful kind of report. An answer that is confident and
+        wrong is the failure this server is built to prevent, and the tests
+        cannot find one on their own.
+
+  - type: input
+    id: tool
+    attributes:
+      label: Which tool
+      placeholder: search_authors
+    validations:
+      required: true
+
+  - type: textarea
+    id: arguments
+    attributes:
+      label: What you asked
+      description: The arguments, as you passed them.
+      render: json
+    validations:
+      required: true
+
+  - type: textarea
+    id: answer
+    attributes:
+      label: What came back
+      description: Paste the result. The text block and the structured output if you have both.
+    validations:
+      required: true
+
+  - type: textarea
+    id: truth
+    attributes:
+      label: What the record actually holds
+      description: A link to the data.bnf.fr page is usually the shortest proof.
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: "`npm ls -g mcp-databnf`, or the version your client reports."
+    validations:
+      required: true

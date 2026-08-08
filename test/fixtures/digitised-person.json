@@ -1,0 +1,99 @@
+{
+  "head": {
+    "link": [],
+    "vars": ["rank", "edition", "title", "reproduction", "ocr", "depiction"]
+  },
+  "results": {
+    "distinct": false,
+    "ordered": true,
+    "bindings": [
+      {
+        "rank": {
+          "type": "typed-literal",
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "value": "0"
+        },
+        "edition": {
+          "type": "uri",
+          "value": "http://data.bnf.fr/ark:/12148/cb100000030#about"
+        },
+        "title": {
+          "type": "literal",
+          "value": "Le vent d'octobre"
+        },
+        "reproduction": {
+          "type": "uri",
+          "value": "https://gallica.bnf.fr/ark:/12148/bpt6k90000030"
+        }
+      },
+      {
+        "rank": {
+          "type": "typed-literal",
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "value": "0"
+        },
+        "edition": {
+          "type": "uri",
+          "value": "http://data.bnf.fr/ark:/12148/cb100000031#about"
+        },
+        "title": {
+          "type": "literal",
+          "value": "Le vent d'octobre"
+        },
+        "ocr": {
+          "type": "uri",
+          "value": "https://gallica.bnf.fr/ark:/12148/bd6t90000031"
+        }
+      },
+      {
+        "rank": {
+          "type": "typed-literal",
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "value": "0"
+        },
+        "edition": {
+          "type": "uri",
+          "value": "http://data.bnf.fr/ark:/12148/cb100000030#about"
+        },
+        "title": {
+          "type": "literal",
+          "value": "Le vent d'octobre"
+        },
+        "reproduction": {
+          "type": "uri",
+          "value": "https://gallica.bnf.fr/ark:/12148/bpt6k90000030"
+        }
+      },
+      {
+        "rank": {
+          "type": "typed-literal",
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "value": "1"
+        },
+        "edition": {
+          "type": "uri",
+          "value": "http://data.bnf.fr/ark:/12148/cb100000001#about"
+        },
+        "depiction": {
+          "type": "uri",
+          "value": "https://gallica.bnf.fr/ark:/12148/btv1b90000001.thumbnail"
+        }
+      },
+      {
+        "rank": {
+          "type": "typed-literal",
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "value": "1"
+        },
+        "edition": {
+          "type": "uri",
+          "value": "http://data.bnf.fr/ark:/12148/cb100000001#about"
+        },
+        "depiction": {
+          "type": "uri",
+          "value": "https://gallica.bnf.fr/ark:/12148/btv1b90000002/f3.item.thumbnail"
+        }
+      }
+    ]
+  }
+}

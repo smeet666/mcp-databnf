@@ -1,0 +1,25 @@
+name: An idea
+description: Something you want to ask the BnF catalogue that this server cannot answer today.
+labels: ["idea"]
+body:
+  - type: textarea
+    id: question
+    attributes:
+      label: The question you wanted to ask
+      description: In your own words, as you would ask a librarian.
+    validations:
+      required: true
+
+  - type: textarea
+    id: today
+    attributes:
+      label: What happens today
+      description: Which tool you reached for, and what it answered instead.
+
+  - type: textarea
+    id: where
+    attributes:
+      label: Where the data lives in data.bnf.fr
+      description: >
+        The predicate or the shape of record that holds it, if you know. A worked
+        SPARQL query is welcome and not required.

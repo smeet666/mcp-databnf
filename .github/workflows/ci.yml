@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node: [20, 22]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm run typecheck
+      # Unit tests only. data.bnf.fr is a query service a public institution pays
+      # for, and shared runners have no business adding load to it on every push.
+      # The nightly canary is where the real endpoint is exercised.
+      - run: npm test
+      - run: npm run build

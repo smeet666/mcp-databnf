@@ -1,0 +1,102 @@
+# Nightly canary against the real data.bnf.fr endpoint.
+#
+# The unit tests run against generated result sets, so they cannot detect that
+# the BnF renamed a predicate or that the endpoint stopped answering in JSON: the
+# day it does, they stay green while the published server is broken for everyone.
+# This job is the only thing that notices, and it opens an issue when it fails.
+#
+# It is deliberately separate from CI: it depends on a third-party service, so a
+# failure here means "the catalogue moved", never "this pull request is bad".
+
+name: Live canary
+
+on:
+  schedule:
+    # 08:12 UTC, off the hour and clear of the other scheduled jobs.
+    - cron: "12 8 * * *"
+  workflow_dispatch:
+
+# A single run at a time, so a slow night cannot overlap with the next one.
+concurrency:
+  group: live-canary
+  cancel-in-progress: false
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      # Needed to open the issue that reports a broken contract.
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Run the live canary
+        env:
+          BNF_LIVE: "1"
+          # Slower than the default: a scheduled job has no user waiting, and the
+          # BnF runs this endpoint at its own cost.
+          BNF_MIN_INTERVAL_MS: "10000"
+          # Generous: a canary must fail on a changed contract, not on a slow night.
+          BNF_TIMEOUT_MS: "90000"
+          BNF_LOG_LEVEL: info
+        run: npm run test:live
+
+      - name: Report a broken canary
+        if: failure()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const title = "Live canary failing: data.bnf.fr may have changed";
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const body = [
+              "The nightly live canary failed. Either the BnF changed something this",
+              "server reads, or the endpoint was unreachable from the runner.",
+              "",
+              `Run: ${runUrl}`,
+              "",
+              "The assertion messages name the field or the behaviour that moved. Fixing one means",
+              "editing `src/bnf/queries.ts` or `src/bnf/parse.ts`, regenerating the fixtures so the",
+              "unit tests cover the new shape, and releasing a patch version.",
+              "",
+              "The upstream is a public dataset rather than a versioned API, so a predicate can be",
+              "renamed without notice and the unit tests will stay green while the published server",
+              "is broken for everyone. That is what this job exists to catch.",
+              "",
+              "Three assertions deserve particular attention. One checks that a name still answers",
+              "with more than one authority record, because returning a single row for a person the",
+              "BnF describes twice is the failure this server was built to prevent. One checks that",
+              "an identifier the BnF describes nowhere still comes back as an absence carrying a",
+              "code, rather than as an empty record. And one checks that a work record still states",
+              "whether it is established, since a provisional identifier quoted as a stable one is a",
+              "citation that goes bad quietly.",
+            ].join("\n");
+
+            // Reuse the open issue rather than filing one every night.
+            const existing = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "open",
+              labels: "live-canary",
+            });
+
+            if (existing.data.length > 0) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing.data[0].number,
+                body: `Still failing as of ${new Date().toISOString()}. ${runUrl}`,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels: ["live-canary"],
+              });
+            }

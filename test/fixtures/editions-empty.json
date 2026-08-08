@@ -1,0 +1,11 @@
+{
+  "head": {
+    "link": [],
+    "vars": ["edition", "title", "date", "year", "publisher", "place", "extent", "catalogue"]
+  },
+  "results": {
+    "distinct": false,
+    "ordered": true,
+    "bindings": []
+  }
+}
