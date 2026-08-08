@@ -1,6 +1,6 @@
 {
   "name": "mcp-databnf",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "MCP server for data.bnf.fr, the Bibliothèque nationale de France open catalogue. Look up authors, works, editions and the Gallica links attached to them. No API key required.",
   "keywords": [
     "mcp",

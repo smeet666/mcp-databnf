@@ -14,8 +14,8 @@ import type { BnfClient } from "../bnf/client.js";
 import { TEXT_WINDOW } from "../bnf/queries.js";
 import { invalidInput } from "../errors.js";
 import { strictInput } from "./arguments.js";
-import { NO_RANKING, ok, retrievedAtSchema, toToolError } from "./shared.js";
-import type { ToolResult } from "./shared.js";
+import { NO_RANKING, classifyEmptyPage, ok, retrievedAtSchema, toToolError } from "./shared.js";
+import type { EmptyPage, ToolResult } from "./shared.js";
 
 export const searchAuthorsDescription = [
   "Find a person in the Bibliothèque nationale de France authority file by name, and get the identifier the other tools take.",
@@ -82,6 +82,37 @@ function lifespan(birthYear: number | null, deathYear: number | null): string {
   return "";
 }
 
+/**
+ * What a page of no rows is allowed to say.
+ *
+ * Only a search whose first row is missing too is an absence. A page past where
+ * the rows stop is a fact about the page asked for, and it is written as such:
+ * the page, that it holds nothing, and the way back to the rows. No count of
+ * what came before appears, because this server never asks the endpoint how
+ * many records match, so where the rows stop is a boundary it can point at and
+ * not a number it can state.
+ */
+function emptyPageNote(emptiness: EmptyPage, page: number, words: string[]): string {
+  const quoted = words.map((word) => `"${word}"`).join(", ");
+  if (emptiness === "past_the_end") {
+    return `Page ${page} holds no row because it sits past the last row of this search. Records do carry ${quoted} in a name, and they are on earlier pages: call again with page=1, or with a lower page number, to read them.`;
+  }
+  if (emptiness === "undetermined") {
+    return `Page ${page} holds no row, and reading the first page of the same search to find out why did not answer. This is either a name carrying ${quoted} matching no record, or a page sitting past the last row of a search that does match. Call again with page=1: rows there mean the second.`;
+  }
+  return `No record in the BnF authority file carries every one of these words in a name: ${quoted}. A search here reads names, so a person known by a pen name is found under that name rather than their own.`;
+}
+
+function emptyPageBody(emptiness: EmptyPage, page: number, name: string): string {
+  if (emptiness === "past_the_end") {
+    return `Page ${page} of the search for "${name}" holds no row: it sits past the last row. Call again with page=1.`;
+  }
+  if (emptiness === "undetermined") {
+    return `Page ${page} of the search for "${name}" holds no row, and whether the rows stop before it could not be read. Call again with page=1.`;
+  }
+  return `No person in the BnF authority file matches "${name}".`;
+}
+
 export async function runSearchAuthors(
   client: BnfClient,
   args: SearchAuthorsArgs,
@@ -145,10 +176,16 @@ export async function runSearchAuthors(
         `More matches exist beyond this page. Ask for page ${args.page + 1}, or narrow the name. This server reports no total, because counting every match means asking the endpoint to walk the whole index a second time.`,
       );
     }
+    // A page holding no row is read for what it is before anything is said
+    // about the authority file: no name matching, and the rows of a name that
+    // does match stopping earlier, look identical from the page alone.
+    let emptiness: EmptyPage = "absent";
     if (authors.length === 0) {
-      notes.push(
-        `No record in the BnF authority file carries every one of these words in a name: ${words.map((word) => `"${word}"`).join(", ")}. A search here reads names, so a person known by a pen name is found under that name rather than their own.`,
-      );
+      emptiness = await classifyEmptyPage(args.page, async () => {
+        const first = await client.searchAuthors(args.name, 1, 0);
+        return first.data.rows.length > 0;
+      });
+      notes.push(emptyPageNote(emptiness, args.page, words));
     }
     if (words.length < args.name.trim().split(/\s+/).length) {
       notes.push(
@@ -158,7 +195,7 @@ export async function runSearchAuthors(
 
     const body =
       authors.length === 0
-        ? `No person in the BnF authority file matches "${args.name}".`
+        ? emptyPageBody(emptiness, args.page, args.name)
         : `${authors.length} record(s) for "${args.name}":\n${authors
             .map((author, index) => {
               const life = lifespan(author.birth_year, author.death_year);

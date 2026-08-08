@@ -18,8 +18,15 @@ import type { BnfClient } from "../bnf/client.js";
 import { TEXT_WINDOW } from "../bnf/queries.js";
 import { invalidInput } from "../errors.js";
 import { strictInput } from "./arguments.js";
-import { NO_RANKING, PROVISIONAL_CAVEAT, ok, retrievedAtSchema, toToolError } from "./shared.js";
-import type { ToolResult } from "./shared.js";
+import {
+  NO_RANKING,
+  PROVISIONAL_CAVEAT,
+  classifyEmptyPage,
+  ok,
+  retrievedAtSchema,
+  toToolError,
+} from "./shared.js";
+import type { EmptyPage, ToolResult } from "./shared.js";
 
 export const searchWorksDescription = [
   "Find a work in the Bibliothèque nationale de France catalogue by words in its title, and get the identifier get_work and list_editions take.",
@@ -65,6 +72,37 @@ export const searchWorksOutput = z.object({
 });
 
 export type SearchWorksArgs = z.infer<typeof searchWorksInput>;
+
+/**
+ * What a page of no rows is allowed to say.
+ *
+ * Only a search whose first row is missing too is an absence. A page past where
+ * the rows stop is a fact about the page asked for, and it is written as such:
+ * the page, that it holds nothing, and the way back to the rows. No count of
+ * what came before appears, because this server never asks the endpoint how
+ * many records match, so where the rows stop is a boundary it can point at and
+ * not a number it can state.
+ */
+function emptyPageNote(emptiness: EmptyPage, page: number, words: string[]): string {
+  const quoted = words.map((word) => `"${word}"`).join(", ");
+  if (emptiness === "past_the_end") {
+    return `Page ${page} holds no row because it sits past the last row of this search. Works do carry ${quoted} in their title, and they are on earlier pages: call again with page=1, or with a lower page number, to read them.`;
+  }
+  if (emptiness === "undetermined") {
+    return `Page ${page} holds no row, and reading the first page of the same search to find out why did not answer. This is either a title carrying ${quoted} matching no record, or a page sitting past the last row of a search that does match. Call again with page=1: rows there mean the second.`;
+  }
+  return `No work in the BnF catalogue has a title carrying every one of these words: ${quoted}. Every word given has to appear, so dropping one widens the search.`;
+}
+
+function emptyPageBody(emptiness: EmptyPage, page: number, title: string): string {
+  if (emptiness === "past_the_end") {
+    return `Page ${page} of the search for "${title}" holds no row: it sits past the last row. Call again with page=1.`;
+  }
+  if (emptiness === "undetermined") {
+    return `Page ${page} of the search for "${title}" holds no row, and whether the rows stop before it could not be read. Call again with page=1.`;
+  }
+  return `No work in the BnF catalogue matches "${title}".`;
+}
 
 export async function runSearchWorks(
   client: BnfClient,
@@ -137,15 +175,21 @@ export async function runSearchWorks(
         `More matches exist beyond this page. Ask for page ${args.page + 1}, or add a word to the title. This server reports no total: a count would read as a measure of the search, and this search has none.`,
       );
     }
+    // A page holding no row is read for what it is before anything is said
+    // about the catalogue: the words matching nothing, and the rows of a search
+    // that does match stopping earlier, look identical from the page alone.
+    let emptiness: EmptyPage = "absent";
     if (works.length === 0) {
-      notes.push(
-        `No work in the BnF catalogue has a title carrying every one of these words: ${words.map((word) => `"${word}"`).join(", ")}. Every word given has to appear, so dropping one widens the search.`,
-      );
+      emptiness = await classifyEmptyPage(args.page, async () => {
+        const first = await client.searchWorks(args.title, 1, 0);
+        return first.data.rows.length > 0;
+      });
+      notes.push(emptyPageNote(emptiness, args.page, words));
     }
 
     const body =
       works.length === 0
-        ? `No work in the BnF catalogue matches "${args.title}".`
+        ? emptyPageBody(emptiness, args.page, args.title)
         : `${works.length} work(s) whose title carries ${words.map((word) => `"${word}"`).join(" and ")}:\n${works
             .map((work, index) => {
               const by =

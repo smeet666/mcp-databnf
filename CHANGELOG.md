@@ -2,6 +2,23 @@
 
 This project follows [semantic versioning](https://semver.org/).
 
+## 1.0.1
+
+- `search_works` and `search_authors` answered a page sitting past the last row
+  by saying nothing in the catalogue carries those words. Asking for page 2 of
+  "Ruy Blas" reported an absence while twenty rows sat on page 1. A page beyond
+  the end and an absence are different answers, and only one of them means the
+  words match nothing. An empty page after the first is now read back at the
+  start of the same search: rows there mean the page sits past the end, and the
+  answer says so and points back to page 1. No row there means a real absence,
+  which is still stated plainly. A read-back that does not answer settles
+  neither, and the answer names both readings rather than choosing one.
+- Page 1 is its own evidence and is never read twice, so a search that matches
+  nothing still costs one request.
+- This states no total. The server does not ask the endpoint how many records
+  match, because a count on a search that does not rank would read as a measure
+  of the answer. Where the rows stop is a boundary it can point at.
+
 ## 1.0.0
 
 First release.

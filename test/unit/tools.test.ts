@@ -5,7 +5,7 @@
  * is about the answer a caller receives rather than about an internal shape.
  */
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { BnfClient } from "../../src/bnf/client.js";
 import { runFindDigitised } from "../../src/tools/findDigitised.js";
 import { runGetAuthor } from "../../src/tools/getAuthor.js";
@@ -13,7 +13,15 @@ import { runGetWork } from "../../src/tools/getWork.js";
 import { runListEditions } from "../../src/tools/listEditions.js";
 import { runSearchAuthors } from "../../src/tools/searchAuthors.js";
 import { runSearchWorks } from "../../src/tools/searchWorks.js";
-import { fakeEndpoint, notesOf, payloadOf, silentLogger, testConfig, textOf } from "./helpers.js";
+import {
+  FIXED_NOW,
+  fakeEndpoint,
+  notesOf,
+  payloadOf,
+  silentLogger,
+  testConfig,
+  textOf,
+} from "./helpers.js";
 import type { Reply } from "./helpers.js";
 
 const on = (replies: Reply[]) => {
@@ -27,6 +35,25 @@ const on = (replies: Reply[]) => {
     }),
   };
 };
+
+/**
+ * Runs a call that sends more than one request, on a pinned clock.
+ *
+ * Requests are spaced by the interval this server owes the endpoint, so a call
+ * making two of them waits. Driving that wait with fake timers keeps the test
+ * off the wall clock, where the assertion would depend on how busy the machine
+ * is.
+ */
+async function paced<T>(call: () => Promise<T>): Promise<T> {
+  vi.useFakeTimers({ now: FIXED_NOW });
+  try {
+    const pending = call();
+    await vi.runAllTimersAsync();
+    return await pending;
+  } finally {
+    vi.useRealTimers();
+  }
+}
 
 describe("search_authors", () => {
   it("returns every record carrying the name and points out that some share it", async () => {
@@ -77,6 +104,31 @@ describe("search_authors", () => {
     expect(result.isError).toBe(true);
     expect(textOf(result)).toContain("[invalid_input]");
     expect(endpoint.requests).toHaveLength(0);
+  });
+
+  it("calls an empty page after the rows a page past the end, never an absence", async () => {
+    const { client, endpoint } = on([{ fixture: "empty" }, { fixture: "authors-search" }]);
+    const result = await paced(() =>
+      runSearchAuthors(client, { name: "Ardouin", limit: 25, page: 2 }),
+    );
+
+    expect(payloadOf(result).authors).toEqual([]);
+    const said = `${textOf(result)} ${notesOf(result).join(" ")}`;
+    expect(said).toContain("past the last row");
+    expect(said).toContain("page=1");
+    expect(said).not.toContain("No record in the BnF authority file");
+    expect(said).not.toContain("No person in the BnF authority file");
+    expect(endpoint.requests).toHaveLength(2);
+  });
+
+  it("keeps the absence on the first page distinct from a page past the end", async () => {
+    const { client, endpoint } = on([{ fixture: "empty" }]);
+    const result = await runSearchAuthors(client, { name: "Nobody", limit: 25, page: 1 });
+
+    const said = `${textOf(result)} ${notesOf(result).join(" ")}`;
+    expect(said).toContain("No person in the BnF authority file");
+    expect(said).not.toContain("past the last row");
+    expect(endpoint.requests).toHaveLength(1);
   });
 
   it("says more exist rather than reporting a total it did not count", async () => {
@@ -184,6 +236,47 @@ describe("search_works", () => {
     const { client } = on([{ fixture: "empty" }]);
     const result = await runSearchWorks(client, { title: "vent octobre", limit: 10, page: 1 });
     expect(notesOf(result).join(" ")).toContain("dropping one widens the search");
+    expect(textOf(result)).toContain("No work in the BnF catalogue matches");
+  });
+
+  it("calls an empty page after the rows a page past the end, never an absence", async () => {
+    // The page asked for holds nothing; the same search read from the start
+    // holds rows, so the words do match and the rows stop earlier.
+    const { client, endpoint } = on([{ fixture: "empty" }, { fixture: "works-search" }]);
+    const result = await paced(() =>
+      runSearchWorks(client, { title: "vent octobre", limit: 25, page: 2 }),
+    );
+
+    expect(payloadOf(result).works).toEqual([]);
+    const said = `${textOf(result)} ${notesOf(result).join(" ")}`;
+    expect(said).toContain("past the last row");
+    expect(said).toContain("page=1");
+    expect(said).not.toContain("No work in the BnF catalogue");
+    expect(endpoint.requests).toHaveLength(2);
+  });
+
+  it("keeps the absence on the first page distinct from a page past the end", async () => {
+    const { client, endpoint } = on([{ fixture: "empty" }]);
+    const result = await runSearchWorks(client, { title: "vent octobre", limit: 25, page: 1 });
+
+    const said = `${textOf(result)} ${notesOf(result).join(" ")}`;
+    expect(said).toContain("No work in the BnF catalogue");
+    expect(said).not.toContain("past the last row");
+    // Reading the first page is the reading that establishes the absence, so
+    // nothing further is asked of the endpoint.
+    expect(endpoint.requests).toHaveLength(1);
+  });
+
+  it("claims neither absence nor overrun when the first page cannot be read back", async () => {
+    const { client } = on([{ fixture: "empty" }, { throws: new Error("connection reset") }]);
+    const result = await paced(() =>
+      runSearchWorks(client, { title: "vent octobre", limit: 25, page: 2 }),
+    );
+
+    expect(result.isError).toBeUndefined();
+    const said = `${textOf(result)} ${notesOf(result).join(" ")}`;
+    expect(said).not.toContain("No work in the BnF catalogue");
+    expect(said).toContain("page=1");
   });
 });
 

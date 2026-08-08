@@ -159,6 +159,36 @@ export function truncate(text: string, maxChars: number): string {
 export const NO_RANKING =
   "The full-text index answers whether a record matches, and it does not score how well. These rows are in the order the index returned them, so the row a person would call the obvious answer can sit anywhere in the list, or on a later page.";
 
+/**
+ * What a page holding no row turned out to be.
+ *
+ * 'absent' is the words matching no record at all. 'past_the_end' is a search
+ * that matches, whose rows stop before the page asked for. 'undetermined' is
+ * the reading that would tell them apart having failed.
+ */
+export type EmptyPage = "absent" | "past_the_end" | "undetermined";
+
+/**
+ * Tell a page asked for beyond the last row from a search that matches nothing.
+ *
+ * Both come back as a page of no rows, and calling either one an absence states
+ * something the reading did not establish. Since a search reports no total, the
+ * only way to separate them is to read the search from its first row: a row
+ * there means the words match and the page asked for sits past where the rows
+ * stop. The first page is its own evidence and is never read twice.
+ */
+export async function classifyEmptyPage(
+  page: number,
+  firstPageHasRow: () => Promise<boolean>,
+): Promise<EmptyPage> {
+  if (page === 1) return "absent";
+  try {
+    return (await firstPageHasRow()) ? "past_the_end" : "absent";
+  } catch {
+    return "undetermined";
+  }
+}
+
 /** Wording used wherever a Gallica link reaches a caller. */
 export const GALLICA_CAVEAT =
   "These are links for a person to open. This server reads the BnF catalogue and never requests gallica.bnf.fr, so it cannot say whether a document opens, what it contains, or on what terms it may be reused.";
