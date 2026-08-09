@@ -25,6 +25,7 @@ import { notFound } from "../errors.js";
 import type {
   AuthorDetail,
   AuthorSummary,
+  AuthoredWork,
   DigitisedLink,
   Edition,
   Page,
@@ -45,10 +46,12 @@ import {
   searchAuthorsQuery,
   searchWorksQuery,
   workQuery,
+  worksByCreatorQuery,
 } from "./queries.js";
 import {
   toAuthorDetail,
   toAuthorSummaries,
+  toAuthoredWorks,
   toDigitisedLinks,
   toEditions,
   toTypes,
@@ -56,8 +59,8 @@ import {
   toWorkSummaries,
 } from "./parse.js";
 import { RateLimiter } from "./rateLimiter.js";
-import type { EntityId } from "./sparql.js";
-import { parseEntityId, toSearchWords } from "./sparql.js";
+import type { EntityId, SearchReading } from "./sparql.js";
+import { parseEntityId, readSearchText, toIndexTerms, toSearchWords } from "./sparql.js";
 
 /** The class data.bnf.fr types a person with. */
 const PERSON_CLASS = "http://xmlns.com/foaf/0.1/Person";
@@ -258,6 +261,27 @@ export class BnfClient {
     return toSearchWords(input);
   }
 
+  /**
+   * The terms the index requires, which is what a row's presence rests on.
+   *
+   * The index splits inside a word at an apostrophe and at a hyphen, so a word
+   * a caller wrote as one can reach it as two, each required on its own.
+   */
+  indexTerms(words: readonly string[]): string[] {
+    return toIndexTerms(words);
+  }
+
+  /**
+   * How a piece of caller text became the terms the search was run with.
+   *
+   * A tool reports the reading back, so the same reading has to be the one the
+   * query was built from: the words, the terms the index makes of them, and
+   * the characters that reached neither.
+   */
+  searchReading(input: string): SearchReading {
+    return readSearchText(input);
+  }
+
   searchAuthors(name: string, limit: number, offset: number): Promise<Read<Page<AuthorSummary>>> {
     const words = toSearchWords(name);
     const query = searchAuthorsQuery(words, limit, offset);
@@ -276,7 +300,7 @@ export class BnfClient {
     // record for either would put a date of birth beside something that was
     // never born, and report its absence as a fact about a life.
     if (!result.data.types.includes(PERSON_CLASS)) {
-      await this.refuse(id, result.data.types, "a person", "get_work reads a work.");
+      await this.refuse(id, "a person", "get_work reads a work.");
     }
     return result;
   }
@@ -288,14 +312,13 @@ export class BnfClient {
    * something else are two different answers, and only one of them means the
    * caller should go looking elsewhere.
    */
-  private async refuse(
-    id: EntityId,
-    types: readonly string[],
-    wanted: string,
-    hint: string,
-  ): Promise<never> {
-    const known =
-      types.length > 0 ? types : (await this.read(`types:${id.id}`, kindQuery(id), toTypes)).data;
+  private async refuse(id: EntityId, wanted: string, hint: string): Promise<never> {
+    // A detail query gathers the classes of everything it walks through, so the
+    // list it leaves behind is longer on one tool than on another and one
+    // record would be described differently depending on which refused it. What
+    // the address itself answers is one list, and it is the one every refusal
+    // states, whatever the caller was reading at the time.
+    const known = (await this.read(`types:${id.id}`, kindQuery(id), toTypes)).data;
 
     if (known.length === 0) {
       throw notFound(`data.bnf.fr describes nothing at "${id.id}".`, {
@@ -328,12 +351,26 @@ export class BnfClient {
     if (!result.data.types.some((type) => WORK_CLASSES.has(type))) {
       await this.refuse(
         id,
-        result.data.types,
         "a work",
         "get_author reads a person, and list_editions reads the editions of a work.",
       );
     }
     return result;
+  }
+
+  /**
+   * The works one person is named the creator of.
+   *
+   * The record is not checked here. A person the catalogue credits with nothing
+   * and an address that names no person both answer with no rows, and telling
+   * them apart costs a second query that only an empty answer needs.
+   */
+  worksByAuthor(id: EntityId, limit: number, offset: number): Promise<Read<Page<AuthoredWork>>> {
+    return this.read(
+      `author-works:${id.id}:${limit}:${offset}`,
+      worksByCreatorQuery(id, limit, offset),
+      (results) => toAuthoredWorks(results, limit),
+    );
   }
 
   listEditions(id: EntityId, limit: number, offset: number): Promise<Read<Page<Edition>>> {

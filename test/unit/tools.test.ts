@@ -75,17 +75,29 @@ describe("search_authors", () => {
     expect(notesOf(result).join(" ")).toContain("does not score how well");
   });
 
-  it("reports the words the index was asked for, once punctuation was set aside", async () => {
+  it("reports the terms the index required, including the ones a word was cut into", async () => {
+    const { client } = on([{ fixture: "authors-search" }]);
+    const result = await runSearchAuthors(client, {
+      name: "Pat O'Brien",
+      limit: 10,
+      page: 1,
+    });
+
+    // The index cuts a word at an apostrophe and requires each piece, so a
+    // record written "Pat O Brien" matches. A caller checking why a row is
+    // there has to be able to see that from the fields.
+    expect(payloadOf(result).words_searched).toEqual(["Pat", "O", "Brien"]);
+    expect(notesOf(result).join(" ")).toContain("apostrophe");
+  });
+
+  it("reports the terms a hyphenated word became", async () => {
     const { client } = on([{ fixture: "authors-search" }]);
     const result = await runSearchAuthors(client, {
       name: "Ardouin, Camille (1871-1933)",
       limit: 10,
       page: 1,
     });
-    // The comma and the brackets are separators; the hyphen inside "1871-1933"
-    // is not, because it is the same hyphen that holds "Charleville-Mézières"
-    // together and nothing distinguishes the two before the index sees them.
-    expect(payloadOf(result).words_searched).toEqual(["Ardouin", "Camille", "1871-1933"]);
+    expect(payloadOf(result).words_searched).toEqual(["Ardouin", "Camille", "1871", "1933"]);
   });
 
   it("calls an empty answer an absence and says what would widen it", async () => {
@@ -94,7 +106,7 @@ describe("search_authors", () => {
 
     expect(result.isError).toBeUndefined();
     expect(payloadOf(result).authors).toEqual([]);
-    expect(notesOf(result).join(" ")).toContain("A search here reads names");
+    expect(notesOf(result).join(" ")).toContain("found under that name rather than their own");
   });
 
   it("refuses a name holding no word rather than searching for nothing", async () => {
@@ -131,6 +143,36 @@ describe("search_authors", () => {
     expect(endpoint.requests).toHaveLength(1);
   });
 
+  it("says an absent name is absent from the person records, which is all it read", async () => {
+    const { client } = on([{ fixture: "empty" }]);
+    const result = await runSearchAuthors(client, { name: "Unesco", limit: 10, page: 1 });
+
+    const said = `${textOf(result)} ${notesOf(result).join(" ")}`;
+    expect(said).toContain("No person record in the BnF authority file");
+    expect(said).toContain("organisation");
+  });
+
+  it("warns that a name spelled another way is another search", async () => {
+    const { client } = on([{ fixture: "authors-search" }]);
+    const found = await runSearchAuthors(client, { name: "Ardouin", limit: 10, page: 1 });
+    expect(notesOf(found).join(" ")).toContain("letter for letter");
+    expect(notesOf(found).join(" ")).toContain("transliteration");
+
+    const { client: other } = on([{ fixture: "empty" }]);
+    const missing = await runSearchAuthors(other, { name: "Ardouïn", limit: 10, page: 1 });
+    expect(notesOf(missing).join(" ")).toContain("transliteration");
+  });
+
+  it("flags a row whose heading and whose dated fields disagree", async () => {
+    const { client } = on([{ fixture: "authors-year-conflict" }]);
+    const result = await runSearchAuthors(client, { name: "Boix", limit: 10, page: 1 });
+
+    const notes = notesOf(result).join(" ");
+    expect(notes).toContain("1852");
+    expect(notes).toContain("1825");
+    expect(notes).toContain("birth_year");
+  });
+
   it("says more exist rather than reporting a total it did not count", async () => {
     const { client } = on([{ fixture: "authors-search-overflow" }]);
     const result = await runSearchAuthors(client, { name: "Ardouin", limit: 2, page: 1 });
@@ -164,6 +206,22 @@ describe("get_author", () => {
     expect(notesOf(result).join(" ")).toContain("has not recorded one");
   });
 
+  it("refuses to raise a living person off a record that dates nobody", async () => {
+    const { client } = on([{ fixture: "author-name-only" }]);
+    const result = await runGetAuthor(client, {
+      author_id: "cb100000005",
+      include_depictions: false,
+    });
+
+    const notes = notesOf(result).join(" ");
+    // A record stating neither a birth nor a death dates the person nowhere, so
+    // its silence about a death carries no reading of whether they are alive.
+    expect(notes).not.toContain("the person is living");
+    expect(notes).toContain("no date of birth and no date of death");
+    expect(notes).toContain("more than one authority record");
+    expect(notes).toContain("search_authors");
+  });
+
   it("counts the images without returning them unless asked", async () => {
     const { client } = on([{ fixture: "author-detail" }]);
     const quiet = await runGetAuthor(client, {
@@ -179,6 +237,23 @@ describe("get_author", () => {
       include_depictions: true,
     });
     expect((payloadOf(full).depictions as unknown[]).length).toBe(2);
+  });
+
+  it("flags a heading whose years the record's own fields contradict", async () => {
+    const { client } = on([{ fixture: "author-year-conflict" }]);
+    const result = await runGetAuthor(client, {
+      author_id: "cb100000007",
+      include_depictions: false,
+    });
+
+    const notes = notesOf(result).join(" ");
+    expect(notes).toContain("1852");
+    expect(notes).toContain("1825");
+    expect(notes).toContain("birth_year");
+    // Neither side is dropped and neither is preferred: the record carries both.
+    const author = payloadOf(result).author as Record<string, unknown>;
+    expect(author.birth_year).toBe(1825);
+    expect(author.label).toBe("Aurélien Boix (1852-19..)");
   });
 
   it("points at the alignments as the way to a biography it does not hold", async () => {
@@ -300,6 +375,16 @@ describe("get_work", () => {
     expect((payloadOf(result).work as Record<string, unknown>).status).toBe("provisional");
   });
 
+  it("says what the form codes are before printing them", async () => {
+    const { client } = on([{ fixture: "work-detail" }]);
+    const result = await runGetWork(client, { work_id: "cb100000010", include_depictions: false });
+
+    // The codes are the vocabulary's own terms and carry no label here, so a
+    // reader shown 'poesi' beside 'te' has no way of knowing which is a word.
+    expect((payloadOf(result).work as Record<string, unknown>).forms).toEqual(["poesi"]);
+    expect(notesOf(result).join(" ")).toContain("publishes no label for them");
+  });
+
   it("keeps expressions from reading as a count of editions", async () => {
     const { client } = on([{ fixture: "work-detail" }]);
     const result = await runGetWork(client, { work_id: "cb100000010", include_depictions: false });
@@ -355,6 +440,18 @@ describe("list_editions", () => {
     expect(payloadOf(result).editions).toEqual([]);
     expect(notesOf(result).join(" ")).toContain("A work record can exist with none");
   });
+
+  it("refuses a person identifier rather than explaining why a work has no editions", async () => {
+    const { client } = on([{ fixture: "editions-empty" }, { fixture: "types-person" }]);
+    const result = await paced(() =>
+      runListEditions(client, { work_id: "cb100000001", limit: 10, page: 1 }),
+    );
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("[not_found]");
+    expect(textOf(result)).toContain("it is not a work");
+    expect(textOf(result)).not.toContain("A work record can exist with none");
+  });
 });
 
 describe("find_digitised", () => {
@@ -383,10 +480,37 @@ describe("find_digitised", () => {
     const { client } = on([{ fixture: "types-person" }, { fixture: "digitised-person" }]);
     const result = await runFindDigitised(client, { id: "cb100000001", kind: "auto", limit: 20 });
 
-    expect(payloadOf(result).counts).toEqual({ reproduction: 1, ocr: 1, depiction: 2 });
+    expect(payloadOf(result).links_returned_by_role).toEqual({
+      reproduction: 1,
+      ocr: 1,
+      depiction: 2,
+    });
     const notes = notesOf(result).join(" ");
     expect(notes).toContain("names that text and does not read it");
     expect(notes).toContain("mentions the subject in passing");
+  });
+
+  it("refuses a stated kind the catalogue contradicts", async () => {
+    const { client } = on([{ fixture: "types-person" }, { fixture: "digitised-person" }]);
+    const result = await paced(() =>
+      runFindDigitised(client, { id: "cb100000001", kind: "work", limit: 20 }),
+    );
+
+    expect(result.isError).toBe(true);
+    expect(textOf(result)).toContain("[invalid_input]");
+    expect(textOf(result)).toContain("person");
+  });
+
+  it("reads what the record is even when the caller states it", async () => {
+    const { client, endpoint } = on([{ fixture: "types-person" }, { fixture: "digitised-person" }]);
+    const result = await paced(() =>
+      runFindDigitised(client, { id: "cb100000001", kind: "person", limit: 20 }),
+    );
+
+    // 'kind' is what the catalogue types the record as, so it is read from the
+    // catalogue whatever the caller wrote.
+    expect(payloadOf(result).kind).toBe("person");
+    expect(endpoint.requests).toHaveLength(2);
   });
 
   it("calls an empty answer a statement about the catalogue", async () => {

@@ -26,6 +26,17 @@
  * catalogue and the service gives the query up, answering 200 with an empty
  * body. Putting the text search in a subquery and filtering its output is what
  * keeps the index in front.
+ *
+ * **A paged query is ordered at both levels.** The subquery decides which
+ * entities a page holds; the outer query decides the sequence its rows arrive
+ * in, and SPARQL gives an unordered outer query no sequence at all. Since a
+ * page is read by taking one entity beyond it and dropping the last, an outer
+ * form without `ORDER BY` drops an entity chosen by the service: that entity is
+ * then missing from the walk, and one of its neighbours is served on two pages.
+ * Both levels therefore sort on the same variable, so the sequence a caller
+ * reads is the sequence the pages were cut along. The outer sort runs over the
+ * rows of one page, so it costs a sort of a few dozen rows rather than of the
+ * matching set.
  */
 
 import { PREFIX_BLOCK } from "./endpoint.js";
@@ -47,6 +58,33 @@ import { boundedInteger, containsAllWords, iriOf, literal } from "./sparql.js";
 export const TEXT_WINDOW = 400;
 
 const prefixed = (body: string): string => `${PREFIX_BLOCK}\n${body.trim()}\n`;
+
+/**
+ * How many rows the window returned, asked for in the request that reads it.
+ *
+ * The window bounds the answer, and it is read before the type filter, so a
+ * page of a few dozen rows can rest on a window that came back full. From the
+ * page alone the two readings are identical: an index with nothing more to give
+ * and an index holding a great deal more that was never asked. The occupancy is
+ * what separates them, and it costs one extra pass of the same index inside a
+ * request that was already being sent, rather than a second call.
+ *
+ * It arrives as a row of its own, binding the count and no entity, because a
+ * branch of a UNION answers even when the other branch holds nothing. A page
+ * emptied by the filter is the reading that most needs the fact.
+ */
+function windowOccupancy(predicate: string, words: readonly string[]): string {
+  return `
+  {
+    SELECT (COUNT(*) AS ?windowRows) WHERE {
+      SELECT DISTINCT ?windowEntity ?windowText WHERE {
+        ?windowEntity ${predicate} ?windowText .
+        ?windowText bif:contains ${containsAllWords(words)} .
+      }
+      LIMIT ${TEXT_WINDOW}
+    }
+  }`;
+}
 
 /**
  * People whose name carries every word given.
@@ -72,28 +110,35 @@ export function searchAuthorsQuery(
   // alongside would give a person recorded under two names two of the page's
   // slots; the parser then folds them back into one row, and a page of ten
   // comes back holding eight.
+  // The columns of the page are read inside the branch that produces it. Read
+  // outside it, they would be joined against an unbound subject on the row the
+  // occupancy arrives on, which asks the service for every name in the file.
   return prefixed(`
-SELECT ?person ?name ?label ?birthYear ?deathYear ?role WHERE {
+SELECT ?person ?name ?label ?birthYear ?deathYear ?role ?windowRows WHERE {
   {
-    SELECT DISTINCT ?person WHERE {
-      {
-        SELECT DISTINCT ?person ?name WHERE {
-          ?person foaf:name ?name .
-          ?name bif:contains ${containsAllWords(words)} .
+    {
+      SELECT DISTINCT ?person WHERE {
+        {
+          SELECT DISTINCT ?person ?name WHERE {
+            ?person foaf:name ?name .
+            ?name bif:contains ${containsAllWords(words)} .
+          }
+          LIMIT ${TEXT_WINDOW}
         }
-        LIMIT ${TEXT_WINDOW}
+        ?person a foaf:Person .
       }
-      ?person a foaf:Person .
+      ORDER BY ?person
+      LIMIT ${take} OFFSET ${skip}
     }
-    ORDER BY ?person
-    LIMIT ${take} OFFSET ${skip}
+    OPTIONAL { ?person foaf:name ?name }
+    OPTIONAL { ?record foaf:focus ?person ; skos:prefLabel ?label }
+    OPTIONAL { ?person bnf:firstYear ?birthYear }
+    OPTIONAL { ?person bnf:lastYear ?deathYear }
+    OPTIONAL { ?person rdag2:biographicalInformation ?role }
   }
-  OPTIONAL { ?person foaf:name ?name }
-  OPTIONAL { ?record foaf:focus ?person ; skos:prefLabel ?label }
-  OPTIONAL { ?person bnf:firstYear ?birthYear }
-  OPTIONAL { ?person bnf:lastYear ?deathYear }
-  OPTIONAL { ?person rdag2:biographicalInformation ?role }
-}`);
+  UNION${windowOccupancy("foaf:name", words)}
+}
+ORDER BY ?person`);
 }
 
 /**
@@ -145,29 +190,70 @@ export function searchWorksQuery(words: readonly string[], limit: number, offset
   // work alone: a work with three authors occupies three rows, and a work
   // recorded under two titles would take two of the page's slots.
   return prefixed(`
-SELECT ?work ?title ?date ?status ?creator ?creatorName WHERE {
+SELECT ?work ?title ?date ?status ?creator ?creatorName ?windowRows WHERE {
+  {
+    {
+      SELECT DISTINCT ?work WHERE {
+        {
+          SELECT DISTINCT ?work ?title WHERE {
+            ?work dcterms:title ?title .
+            ?title bif:contains ${containsAllWords(words)} .
+          }
+          LIMIT ${TEXT_WINDOW}
+        }
+        ?work a rdafrbr:Work .
+      }
+      ORDER BY ?work
+      LIMIT ${take} OFFSET ${skip}
+    }
+    OPTIONAL { ?work dcterms:title ?title }
+    OPTIONAL { ?work dcterms:date ?date }
+    OPTIONAL { ?work rdae:statusOfIdentification ?status }
+    OPTIONAL {
+      ?work dcterms:creator ?creator .
+      OPTIONAL { ?creator foaf:name ?creatorName }
+    }
+  }
+  UNION${windowOccupancy("dcterms:title", words)}
+}
+ORDER BY ?work`);
+}
+
+/**
+ * The works one person is named the creator of.
+ *
+ * `dcterms:creator` is the statement that ties a work to the person who made
+ * it, and it is the widest one at that level: every work reached through the
+ * relator vocabularies is either reached through this one as well, or is a
+ * record of a performance rather than of a work. So one statement answers the
+ * question, and a second path would add rows of a different kind.
+ *
+ * The page is cut in a subquery over works alone, ordered by their address. A
+ * work carrying two form codes arrives as two rows, and cutting the page over
+ * rows would give that work two of the page's slots. The order is arbitrary and
+ * it is stable, which is what a caller reading page after page needs.
+ */
+export function worksByCreatorQuery(id: EntityId, limit: number, offset: number): string {
+  const person = iriOf(id);
+  const take = boundedInteger(limit, 1, 50, "limit") + 1;
+  const skip = boundedInteger(offset, 0, 5000, "offset");
+
+  return prefixed(`
+SELECT ?work ?title ?date ?year ?status ?form WHERE {
   {
     SELECT DISTINCT ?work WHERE {
-      {
-        SELECT DISTINCT ?work ?title WHERE {
-          ?work dcterms:title ?title .
-          ?title bif:contains ${containsAllWords(words)} .
-        }
-        LIMIT ${TEXT_WINDOW}
-      }
-      ?work a rdafrbr:Work .
+      ?work dcterms:creator ${person} .
     }
     ORDER BY ?work
     LIMIT ${take} OFFSET ${skip}
   }
   OPTIONAL { ?work dcterms:title ?title }
   OPTIONAL { ?work dcterms:date ?date }
+  OPTIONAL { ?work bnf:firstYear ?year }
   OPTIONAL { ?work rdae:statusOfIdentification ?status }
-  OPTIONAL {
-    ?work dcterms:creator ?creator .
-    OPTIONAL { ?creator foaf:name ?creatorName }
-  }
-}`);
+  OPTIONAL { ?work rdae:formOfWork ?form }
+}
+ORDER BY ?work`);
 }
 
 /** Everything one work's record carries, with the names of its creators. */
@@ -216,7 +302,8 @@ SELECT ?edition ?title ?date ?year ?publisher ?place ?editionStatement
   OPTIONAL { ?edition rdfs:seeAlso ?catalogue }
   OPTIONAL { ?edition rdarel:electronicReproduction ?reproduction }
   OPTIONAL { ?edition bnf:OCR ?ocr }
-}`);
+}
+ORDER BY ?edition`);
 }
 
 /**

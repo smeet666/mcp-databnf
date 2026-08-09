@@ -1,7 +1,7 @@
 {
   "head": {
     "link": [],
-    "vars": ["person", "name", "label", "birthYear", "deathYear", "role"]
+    "vars": ["person", "name", "label", "birthYear", "deathYear", "role", "windowRows"]
   },
   "results": {
     "distinct": false,
@@ -73,6 +73,13 @@
         "role": {
           "type": "literal",
           "value": "Botaniste"
+        }
+      },
+      {
+        "windowRows": {
+          "type": "typed-literal",
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "value": "3"
         }
       }
     ]

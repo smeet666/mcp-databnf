@@ -12,6 +12,14 @@ export interface DigitisedLink {
   /** The address to open, exactly as data.bnf.fr publishes it. */
   url: string;
   /**
+   * The view the address asks Gallica for, such as `thumbnail` or `f3.item`.
+   *
+   * Null when the address names the document itself. An address asking for a
+   * view opens that view, so the ARK beside it names the document a rendering
+   * was taken from rather than what a reader will see.
+   */
+  rendering: string | null;
+  /**
    * Which statement attached this link to the record.
    *
    * `reproduction` is the digitised copy of the edition itself.
@@ -103,6 +111,25 @@ export interface WorkSummary {
   sourceUrl: string;
 }
 
+/** One row of the works a person is named the creator of. */
+export interface AuthoredWork {
+  id: string;
+  title: string | null;
+  /** The date the record gives the work, as published. */
+  date: string | null;
+  /** The same date as a number, when the record states one. */
+  year: number | null;
+  /**
+   * Terms of the BnF work-form vocabulary the record points at, as the terms
+   * themselves. The vocabulary publishes no label for them in this dataset, so
+   * nothing here translates one: some read as words and some do not. An empty
+   * list is a form the record does not state.
+   */
+  forms: string[];
+  status: "established" | "provisional";
+  sourceUrl: string;
+}
+
 /** One work, read in full. */
 export interface WorkDetail {
   id: string;
@@ -175,4 +202,17 @@ export interface Page<T> {
   hasMore: boolean;
   /** Rows the endpoint sent that could not be read, present only when some were. */
   skipped?: number;
+  /**
+   * Whether the fixed window a text search reads off the index came back full.
+   *
+   * A full window bounds the answer: records carrying the words sit past it and
+   * were never read, so `hasMore` false means the rows of the window stop here
+   * rather than the catalogue holding nothing further. A window with room to
+   * spare holds everything that matched, which makes the answer both complete
+   * and repeatable.
+   *
+   * Null when the endpoint sent no occupancy, so nothing is claimed either way.
+   * Absent on a listing that reads no index window.
+   */
+  indexWindowFull?: boolean | null;
 }

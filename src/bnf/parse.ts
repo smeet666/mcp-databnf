@@ -8,11 +8,12 @@
  */
 
 import { isGallicaAddress, publicPageFor } from "./endpoint.js";
-import { MOST_TRIPLES } from "./queries.js";
+import { MOST_TRIPLES, TEXT_WINDOW } from "./queries.js";
 import type { SparqlResults, SparqlRow, SparqlTerm } from "./http.js";
 import type {
   AuthorDetail,
   AuthorSummary,
+  AuthoredWork,
   DigitisedLink,
   Edition,
   Page,
@@ -127,7 +128,23 @@ export function toDigitisedLink(
   // views of one document two identifiers.
   const ark = segment.split(".")[0] ?? segment;
   if (ark === "") return null;
-  return { ark, url: address, role, fromId, fromTitle };
+  return { ark, url: address, rendering: renderingOf(address, ark), role, fromId, fromTitle };
+}
+
+/**
+ * The view an address asks for, read off what follows the ARK name in it.
+ *
+ * `bpt6k90000030` names a document; `bpt6k90000030.thumbnail` asks for a small
+ * image of it and `btv1b90000002/f3.item.thumbnail` for one leaf of it as an
+ * image. Carrying that as a field of its own is what keeps `url` and `ark` from
+ * reading as two names for one thing: a caller told only the ARK would quote a
+ * document while having been handed a picture of a page of it.
+ */
+function renderingOf(address: string, ark: string): string | null {
+  const path = address.split(/[?#]/)[0] ?? address;
+  const after = path.slice(path.indexOf(`ark:/12148/${ark}`) + `ark:/12148/${ark}`.length);
+  const rendering = after.replace(/^[./]+/, "").replace(/\/+$/, "");
+  return rendering === "" ? null : rendering;
 }
 
 /**
@@ -143,6 +160,36 @@ function page<T>(rows: T[], limit: number, skipped: number): Page<T> {
     ? { rows: rows.slice(0, limit), hasMore: more, skipped }
     : { rows: rows.slice(0, limit), hasMore: more };
 }
+
+/**
+ * Whether the index window a text search reads came back full.
+ *
+ * The endpoint sends the occupancy on a row of its own, binding the count and
+ * naming no entity. A count that reaches the size of the window means the
+ * reading stopped where the window did rather than where the matches did.
+ *
+ * Null when no such row arrived, since a window nobody measured supports no
+ * statement about what was left out.
+ */
+function readWindowOccupancy(results: SparqlResults): boolean | null {
+  for (const row of results.results.bindings) {
+    const raw = text(row.windowRows);
+    if (raw === null) continue;
+    const count = Number(raw);
+    if (Number.isInteger(count)) return count >= TEXT_WINDOW;
+  }
+  return null;
+}
+
+/**
+ * True for the row carrying the occupancy and nothing else.
+ *
+ * It names no record, which is the shape of a row that had to be dropped. It is
+ * neither: counting it as dropped would report the page as short of a record
+ * the endpoint never claimed to send.
+ */
+const isOccupancyRow = (row: SparqlRow, entity: string): boolean =>
+  row.windowRows !== undefined && row[entity] === undefined;
 
 /** Index a `?p ?o` result set by predicate, keeping every value. */
 export function byPredicate(results: SparqlResults): Map<string, SparqlRow[]> {
@@ -242,6 +289,7 @@ export function toAuthorSummaries(results: SparqlResults, limit: number): Page<A
   let skipped = 0;
 
   for (const row of results.results.bindings) {
+    if (isOccupancyRow(row, "person")) continue;
     const iri = text(row.person);
     const id = iri === null ? null : idFromIri(iri);
     if (iri === null || id === null) {
@@ -264,7 +312,7 @@ export function toAuthorSummaries(results: SparqlResults, limit: number): Page<A
     });
   }
 
-  return page(rows, limit, skipped);
+  return { ...page(rows, limit, skipped), indexWindowFull: readWindowOccupancy(results) };
 }
 
 /** One person, assembled from both halves of their record. */
@@ -348,6 +396,7 @@ export function toWorkSummaries(results: SparqlResults, limit: number): Page<Wor
 
   let skipped = 0;
   for (const row of results.results.bindings) {
+    if (isOccupancyRow(row, "work")) continue;
     const iri = text(row.work);
     const id = iri === null ? null : idFromIri(iri);
     if (iri === null || id === null) {
@@ -376,6 +425,61 @@ export function toWorkSummaries(results: SparqlResults, limit: number): Page<Wor
     const creatorId = creatorIri ? idFromIri(creatorIri) : null;
     if (creatorId && !work.creators.some((c) => c.id === creatorId)) {
       work.creators.push({ id: creatorId, name: text(row.creatorName) });
+    }
+  }
+
+  return {
+    ...page(
+      order.map((id) => byId.get(id)!),
+      limit,
+      skipped,
+    ),
+    indexWindowFull: readWindowOccupancy(results),
+  };
+}
+
+/**
+ * The works one person is credited with, gathered from rows that repeat.
+ *
+ * A work pointing at two form terms arrives as two rows differing in one
+ * column. Counting rows would report two works where the catalogue links one,
+ * so the address of the work is what a work is counted by.
+ */
+export function toAuthoredWorks(results: SparqlResults, limit: number): Page<AuthoredWork> {
+  const order: string[] = [];
+  const byId = new Map<string, AuthoredWork>();
+
+  let skipped = 0;
+  for (const row of results.results.bindings) {
+    const iri = text(row.work);
+    const id = iri === null ? null : idFromIri(iri);
+    if (iri === null || id === null) {
+      // A row naming no record, or naming one at an address this client cannot
+      // read, is a row that was dropped. Counting it is what keeps a short page
+      // from reading as a small catalogue.
+      skipped += 1;
+      continue;
+    }
+
+    let work = byId.get(id);
+    if (!work) {
+      work = {
+        id,
+        title: text(row.title),
+        date: text(row.date),
+        year: integer(row.year),
+        forms: [],
+        status: readStatus(text(row.status), iri),
+        sourceUrl: publicPageFor(iri),
+      };
+      byId.set(id, work);
+      order.push(id);
+    }
+
+    const form = text(row.form);
+    if (form !== null && form.startsWith("http")) {
+      const term = vocabularyTerm(form);
+      if (!work.forms.includes(term)) work.forms.push(term);
     }
   }
 

@@ -1,0 +1,93 @@
+{
+  "head": {
+    "link": [],
+    "vars": ["p", "o", "lang"]
+  },
+  "results": {
+    "distinct": false,
+    "ordered": true,
+    "bindings": [
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://www.w3.org/1999/02/22-rdf-syntax-ns#type"
+        },
+        "o": {
+          "type": "uri",
+          "value": "http://xmlns.com/foaf/0.1/Person"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://xmlns.com/foaf/0.1/name"
+        },
+        "o": {
+          "type": "literal",
+          "value": "Aurélien Boix"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://vocab.org/bio/0.1/birth"
+        },
+        "o": {
+          "type": "literal",
+          "value": "1825-07-12"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://vocab.org/bio/0.1/death"
+        },
+        "o": {
+          "type": "literal",
+          "value": "19.."
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://data.bnf.fr/ontology/bnf-onto/firstYear"
+        },
+        "o": {
+          "type": "typed-literal",
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "value": "1825"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://www.w3.org/2004/02/skos/core#prefLabel"
+        },
+        "o": {
+          "type": "literal",
+          "value": "Aurélien Boix (1852-19..)",
+          "xml:lang": "fr"
+        },
+        "lang": {
+          "type": "literal",
+          "value": "fr"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
+          "value": "http://www.w3.org/2004/02/skos/core#altLabel"
+        },
+        "o": {
+          "type": "literal",
+          "value": "Aurélien-Charles-Marie Boix (1852-19..)",
+          "xml:lang": "fr"
+        },
+        "lang": {
+          "type": "literal",
+          "value": "fr"
+        }
+      }
+    ]
+  }
+}

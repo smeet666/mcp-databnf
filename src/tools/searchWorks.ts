@@ -2,10 +2,10 @@
  * search_works: find a work by words in its title.
  *
  * The endpoint's full-text index answers one question: does this title carry
- * every one of these words. It returns no score, and the order it answers in is
- * the order of the index. Searching for "saison enfer" therefore returns
- * a dozen studies of Rimbaud before Rimbaud, and every one of them is a correct
- * match.
+ * every one of these words. It returns no score, and the rows come back in the
+ * order of the record's address, which measures nothing about the match.
+ * Searching for "saison enfer" therefore returns a dozen studies of Rimbaud
+ * before Rimbaud, and every one of them is a correct match.
  *
  * So this tool never presents its rows as a ranking, and never presents the
  * first row as the answer. Saying that plainly is worth more than any
@@ -21,8 +21,11 @@ import { strictInput } from "./arguments.js";
 import {
   NO_RANKING,
   PROVISIONAL_CAVEAT,
+  WINDOW_FULL_AND_NO_MORE,
+  WINDOW_FULL_CAVEAT,
   classifyEmptyPage,
   ok,
+  readingNotes,
   retrievedAtSchema,
   toToolError,
 } from "./shared.js";
@@ -30,10 +33,11 @@ import type { EmptyPage, ToolResult } from "./shared.js";
 
 export const searchWorksDescription = [
   "Find a work in the Bibliothèque nationale de France catalogue by words in its title, and get the identifier get_work and list_editions take.",
-  "A row matches when its title carries every word given. The index returns no measure of how well a row matches, so the rows are in index order and the work a person would call the obvious answer can sit anywhere in the list or on a later page.",
+  "A row matches when its title carries every word given. The index returns no measure of how well a row matches, so the rows are ordered by the address of the record and the work a person would call the obvious answer can sit anywhere in the list or on a later page.",
   "A study of a book carries the book's title, so a search for a famous title returns the criticism alongside the work. Read 'creators' to tell them apart.",
-  "This reads titles and nothing else. It cannot find the works of a named person: searching a person's name returns works written about them, whose creators are their critics.",
+  "This reads titles and nothing else. Searching a person's name returns the works written about them, whose creators are their critics; list_works is what walks from a person to the works the catalogue names them the creator of.",
   "'status' says whether the BnF has established the work as a record of its own or holds it provisionally under a title it has catalogued.",
+  "One search reads a fixed window of the index, and that window is read before the works are told apart from everything else the index holds, so even a short list can rest on a full one. 'index_window_full' says which: when it is true, titles sit past what was read, 'has_more' being false says where the reading stopped, and another reading of the same search can bring back other rows. Add a word to the title to reach further.",
 ].join(" ");
 
 export const searchWorksInput = strictInput({
@@ -63,10 +67,24 @@ export const workRowSchema = z.object({
 
 export const searchWorksOutput = z.object({
   title: z.string().describe("The words asked for."),
-  words_searched: z.array(z.string()),
+  words_searched: z
+    .array(z.string())
+    .describe(
+      "The terms the index required, each of which has to appear in the title. A word is cut at an apostrophe and at a hyphen before the index sees it, so a word given as one can appear here as two, and a record carrying the pieces apart is a match.",
+    ),
   works: z.array(workRowSchema),
   page: z.number().int(),
-  has_more: z.boolean(),
+  has_more: z
+    .boolean()
+    .describe(
+      "Whether the endpoint held at least one further row beyond this page, within the window the search read off the index. Read it alongside 'index_window_full': false on a full window says where the reading stopped rather than that the catalogue holds nothing else.",
+    ),
+  index_window_full: z
+    .boolean()
+    .nullable()
+    .describe(
+      "Whether the fixed window this search reads off the index came back full. The window is read before the works are separated from the rest of the index, so a short list can rest on a full window. True means titles carrying these words sit past what was read, and another reading can bring back other rows. False means the window held everything that matched. Null when the endpoint stated no occupancy.",
+    ),
   retrieved_at: retrievedAtSchema,
   notes: z.array(z.string()),
 });
@@ -83,8 +101,20 @@ export type SearchWorksArgs = z.infer<typeof searchWorksInput>;
  * many records match, so where the rows stop is a boundary it can point at and
  * not a number it can state.
  */
-function emptyPageNote(emptiness: EmptyPage, page: number, words: string[]): string {
+function emptyPageNote(
+  emptiness: EmptyPage,
+  page: number,
+  words: string[],
+  windowFull: boolean,
+): string {
   const quoted = words.map((word) => `"${word}"`).join(", ");
+  // The window is read before works are told apart from the rest of the index,
+  // so a full one can leave nothing for the answer while the catalogue holds
+  // matching works further along. That page and a page of no matches at all are
+  // the same page, and the window is what separates them.
+  if (windowFull) {
+    return `The window this search reads off the index came back full, and no work record survived the reading: every row of it named something the catalogue types as another kind of record. Whether a work carries ${quoted} in its title is unanswered here rather than answered no. Add a word to the title so that the window reaches further into the index.`;
+  }
   if (emptiness === "past_the_end") {
     return `Page ${page} holds no row because it sits past the last row of this search. Works do carry ${quoted} in their title, and they are on earlier pages: call again with page=1, or with a lower page number, to read them.`;
   }
@@ -94,7 +124,15 @@ function emptyPageNote(emptiness: EmptyPage, page: number, words: string[]): str
   return `No work in the BnF catalogue has a title carrying every one of these words: ${quoted}. Every word given has to appear, so dropping one widens the search.`;
 }
 
-function emptyPageBody(emptiness: EmptyPage, page: number, title: string): string {
+function emptyPageBody(
+  emptiness: EmptyPage,
+  page: number,
+  title: string,
+  windowFull: boolean,
+): string {
+  if (windowFull) {
+    return `No work record survived the reading for "${title}", out of a window of the index that came back full. Add a word to the title.`;
+  }
   if (emptiness === "past_the_end") {
     return `Page ${page} of the search for "${title}" holds no row: it sits past the last row. Call again with page=1.`;
   }
@@ -109,7 +147,8 @@ export async function runSearchWorks(
   args: SearchWorksArgs,
 ): Promise<ToolResult> {
   try {
-    const words = client.words(args.title);
+    const reading = client.searchReading(args.title);
+    const words = reading.words;
     if (words.length === 0) {
       return toToolError(
         invalidInput(
@@ -134,8 +173,31 @@ export async function runSearchWorks(
     }
     const { data, cached, retrievedAt } = await client.searchWorks(args.title, args.limit, offset);
 
+    const terms = reading.terms;
+    const windowFull = data.indexWindowFull ?? null;
+
     const notes: string[] = [];
     if (cached) notes.push("Served from this server's short-lived in-memory cache.");
+
+    // What bounds the answer is said before what qualifies it. The text block
+    // fits a limited trailer and drops the last notes to keep the credit, and a
+    // caller losing this one is left reading a part of the matches as all of
+    // them.
+    if (windowFull) {
+      notes.push(WINDOW_FULL_CAVEAT);
+      if (!data.hasMore) notes.push(WINDOW_FULL_AND_NO_MORE);
+    }
+
+    // A caller checking why a row is on the list reads the terms, so the ones
+    // the index made out of a word are traced back to it before anything that
+    // merely qualifies the answer.
+    const split = words.filter((word) => /['-]/u.test(word));
+    if (split.length > 0) {
+      notes.push(
+        `${split.map((word) => `"${word}"`).join(", ")} reached the index as separate terms: it cuts a word at an apostrophe and at a hyphen, and requires each piece to appear in the title rather than in that arrangement, so a record writing the pieces apart is a match.`,
+      );
+    }
+    notes.push(...readingNotes(reading, "title"));
 
     const works = data.rows.map((row) => ({
       id: row.id,
@@ -156,9 +218,9 @@ export async function runSearchWorks(
     // words carry the meaning is not something this server can tell: "mal" and
     // "les" are the same length, so the requirement is stated and the choice of
     // what to drop is left where it belongs.
-    if (words.length > 2) {
+    if (terms.length > 2) {
       notes.push(
-        `All ${words.length} words were required: ${words.map((word) => `"${word}"`).join(", ")}. A record catalogued under a shorter form of the title carries fewer of them and falls out of the answer, so dropping a word widens the search.`,
+        `All ${terms.length} terms were required: ${terms.map((term) => `"${term}"`).join(", ")}. A record catalogued under a shorter form of the title carries fewer of them and falls out of the answer, so dropping a word widens the search.`,
       );
     }
 
@@ -180,17 +242,21 @@ export async function runSearchWorks(
     // that does match stopping earlier, look identical from the page alone.
     let emptiness: EmptyPage = "absent";
     if (works.length === 0) {
-      emptiness = await classifyEmptyPage(args.page, async () => {
-        const first = await client.searchWorks(args.title, 1, 0);
-        return first.data.rows.length > 0;
-      });
-      notes.push(emptyPageNote(emptiness, args.page, words));
+      // A full window already accounts for the page, and reading the search
+      // from its first row would answer a question the window has settled.
+      emptiness = windowFull
+        ? "absent"
+        : await classifyEmptyPage(args.page, async () => {
+            const first = await client.searchWorks(args.title, 1, 0);
+            return first.data.rows.length > 0;
+          });
+      notes.push(emptyPageNote(emptiness, args.page, terms, windowFull === true));
     }
 
     const body =
       works.length === 0
-        ? emptyPageBody(emptiness, args.page, args.title)
-        : `${works.length} work(s) whose title carries ${words.map((word) => `"${word}"`).join(" and ")}:\n${works
+        ? emptyPageBody(emptiness, args.page, args.title, windowFull === true)
+        : `${works.length} work(s) whose title carries ${terms.map((term) => `"${term}"`).join(" and ")}:\n${works
             .map((work, index) => {
               const by =
                 work.creators.length > 0
@@ -205,10 +271,11 @@ export async function runSearchWorks(
     return ok(
       {
         title: args.title,
-        words_searched: words,
+        words_searched: terms,
         works,
         page: args.page,
         has_more: data.hasMore,
+        index_window_full: windowFull,
         retrieved_at: retrievedAt,
         notes,
       },

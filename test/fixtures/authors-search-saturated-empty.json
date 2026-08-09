@@ -1,0 +1,19 @@
+{
+  "head": {
+    "link": [],
+    "vars": ["person", "name", "windowRows"]
+  },
+  "results": {
+    "distinct": false,
+    "ordered": true,
+    "bindings": [
+      {
+        "windowRows": {
+          "type": "typed-literal",
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "value": "400"
+        }
+      }
+    ]
+  }
+}

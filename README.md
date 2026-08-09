@@ -2,7 +2,8 @@
 
 An MCP server for [data.bnf.fr](https://data.bnf.fr), the open catalogue of the
 Bibliothèque nationale de France. Look up an author, find a work, list the
-editions the BnF holds of it, and gather the links to what has been digitised.
+editions the BnF holds of it, list what a person wrote, and gather the links to
+what has been digitised.
 
 No API key. No account. Read-only.
 
@@ -22,7 +23,7 @@ web search does not: which of two people bearing one name wrote a given book,
 what the BnF recorded as somebody's date and place of death, which editions of a
 work exist and who printed them, and which of those have been digitised.
 
-This server asks those questions for you, in six tools, and reports what the
+This server asks those questions for you, in seven tools, and reports what the
 catalogue answers without adding to it.
 
 ## Install
@@ -44,7 +45,7 @@ npx mcp-databnf
 }
 ```
 
-## The six tools
+## The seven tools
 
 | Tool             | Answers                                                                                                                   |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------- |
@@ -52,11 +53,12 @@ npx mcp-databnf
 | `get_author`     | Dates, places, occupation, language, country, Dewey class, and the same person in VIAF, IdRef, DBpedia, Wikidata and ISNI |
 | `search_works`   | Which works have these words in their title                                                                               |
 | `get_work`       | Title, creators, date, language, form, subject, and whether the record is established or provisional                      |
+| `list_works`     | Which works the catalogue names a person the creator of, with the date and the form code it gives each                    |
 | `list_editions`  | Publisher, place, year, edition statement, extent, ISBN, catalogue link, and the Gallica link when there is one           |
 | `find_digitised` | Every digitised document the catalogue attaches to a person or a work, as links                                           |
 
 A typical exchange asks `search_authors` for a name, reads the rows, and passes
-one identifier to `get_author` or `search_works`.
+one identifier to `get_author`, to `list_works`, or on to `list_editions`.
 
 ## What it does not do, and why
 
@@ -85,13 +87,40 @@ match. This server says so rather than inventing an order the catalogue does not
 support, and it reports no total, because a total on a search that does not rank
 reads as a measure of relevance.
 
+**A name is matched letter for letter, and only among the people.** The index
+compares the characters given against the characters a cataloguer entered, so
+`Dostoïevski`, `Dostoievski` and `Dostoevskij` are three searches reaching three
+different sets of records, and a handful of rows under one spelling is no
+evidence about the others. `search_authors` says so on every answer, and it reads
+the person records alone: an organisation or a conference is outside what it
+looked at, so an answer holding no row is never a statement that the authority
+file holds no such heading.
+
+**A list of works is one link, not a bibliography.** `list_works` walks
+`dcterms:creator`, the statement that ties a work to the person who made it.
+That statement is real and it is partial. The catalogue credits a person on a
+record in other ways, and the BnF holds printed editions whose work it has never
+established as a record of its own, so a title missing from the list is not a
+title the person did not write. Every answer says so, and none of them reports a
+total: a count of what one link reaches would be read as a count of what somebody
+wrote.
+
+**A form code says what a work declares, and an empty one says nothing.** A work
+record points at a term of the BnF's work-form vocabulary, and this dataset
+publishes no label for those terms. So `roman`, `poesi` and `te` arrive as the
+codes they are: some read as words and some do not. The catalogue also states no
+form at all on a great many works, and that silence is a form unstated rather
+than a genre denied. Keeping the rows that carry one code therefore finds the
+works declaring it and never all the works of that form, which is why the codes
+are reported and no filter is offered on them.
+
 **It does not write biographies.** The field the BnF calls biographical
 information is an occupation on most records: Rimbaud's says _Poète_, and that is
 the whole of it. `get_author` returns that word and says what it is.
 
 **It exposes no raw SPARQL tool.** An arbitrary query is an unbounded load on a
 service a public institution pays for, and nothing here would control what the
-caller wrote. Every query this server sends is one of nine written in advance.
+caller wrote. Every query this server sends is one of ten written in advance.
 
 ## The licence, and what it asks of you
 
@@ -207,8 +236,8 @@ retrieval.
 
 Un serveur MCP pour [data.bnf.fr](https://data.bnf.fr), le catalogue ouvert de la
 Bibliothèque nationale de France. Chercher un auteur, trouver une œuvre, lister
-les éditions que la BnF en conserve, et rassembler les liens vers ce qui a été
-numérisé.
+les éditions que la BnF en conserve, lister ce qu'une personne a écrit, et
+rassembler les liens vers ce qui a été numérisé.
 
 Sans clé d'API. Sans compte. En lecture seule.
 
@@ -221,7 +250,7 @@ tel livre, ce que la BnF a enregistré comme date et lieu de mort de quelqu'un,
 quelles éditions d'une œuvre existent et qui les a imprimées, et lesquelles ont
 été numérisées.
 
-Ce serveur pose ces questions pour vous, en six outils, et rapporte ce que le
+Ce serveur pose ces questions pour vous, en sept outils, et rapporte ce que le
 catalogue répond sans y ajouter.
 
 ## Installation
@@ -241,16 +270,17 @@ npx mcp-databnf
 }
 ```
 
-## Les six outils
+## Les sept outils
 
-| Outil            | Répond à                                                                                                              |
-| ---------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `search_authors` | Qui la BnF enregistre sous ce nom, et quelle notice est laquelle                                                      |
-| `get_author`     | Dates, lieux, profession, langue, pays, indice Dewey, et la même personne dans VIAF, IdRef, DBpedia, Wikidata et ISNI |
-| `search_works`   | Quelles œuvres portent ces mots dans leur titre                                                                       |
-| `get_work`       | Titre, auteurs, date, langue, forme, sujet, et si la notice est établie ou provisoire                                 |
-| `list_editions`  | Éditeur, lieu, année, mention d'édition, pagination, ISBN, lien catalogue, et le lien Gallica quand il existe         |
-| `find_digitised` | Tous les documents numérisés que le catalogue rattache à une personne ou à une œuvre, sous forme de liens             |
+| Outil            | Répond à                                                                                                               |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| `search_authors` | Qui la BnF enregistre sous ce nom, et quelle notice est laquelle                                                       |
+| `get_author`     | Dates, lieux, profession, langue, pays, indice Dewey, et la même personne dans VIAF, IdRef, DBpedia, Wikidata et ISNI  |
+| `search_works`   | Quelles œuvres portent ces mots dans leur titre                                                                        |
+| `get_work`       | Titre, auteurs, date, langue, forme, sujet, et si la notice est établie ou provisoire                                  |
+| `list_works`     | Quelles œuvres le catalogue attribue à une personne comme créatrice, avec la date et le code de forme qu'il leur donne |
+| `list_editions`  | Éditeur, lieu, année, mention d'édition, pagination, ISBN, lien catalogue, et le lien Gallica quand il existe          |
+| `find_digitised` | Tous les documents numérisés que le catalogue rattache à une personne ou à une œuvre, sous forme de liens              |
 
 ## Ce qu'il ne fait pas, et pourquoi
 
@@ -280,6 +310,34 @@ Ce serveur le dit, plutôt que d'inventer un ordre que le catalogue ne porte pas
 et il ne rapporte aucun total : sur une recherche qui ne classe pas, un total se
 lit comme une mesure de pertinence.
 
+**Un nom est apparié lettre à lettre, et seulement parmi les personnes.**
+L'index compare les caractères donnés à ceux qu'un catalogueur a saisis :
+`Dostoïevski`, `Dostoievski` et `Dostoevskij` sont donc trois recherches qui
+atteignent trois ensembles de notices différents, et quelques lignes obtenues
+sous une graphie ne disent rien des autres. `search_authors` l'énonce sur chaque
+réponse, et il ne lit que les notices de personnes : un organisme ou un congrès
+est hors de ce qu'il a regardé, si bien qu'une réponse sans ligne n'affirme
+jamais que le fichier d'autorité ne tient pas une telle vedette.
+
+**Une liste d'œuvres est un lien, pas une bibliographie.** `list_works` suit
+`dcterms:creator`, l'énoncé qui rattache une œuvre à qui l'a faite. Cet énoncé
+est réel et il est partiel : le catalogue crédite une personne sur une notice par
+d'autres voies, et la BnF conserve des éditions imprimées dont l'œuvre n'a jamais
+été établie comme notice à part entière. Un titre absent de la liste n'est donc
+pas un titre que la personne n'a pas écrit. Chaque réponse le dit, et aucune ne
+rapporte de total : un compte de ce qu'un seul lien atteint se lirait comme un
+compte de ce que quelqu'un a écrit.
+
+**Un code de forme dit ce qu'une œuvre déclare ; son absence ne dit rien.** Une
+notice d'œuvre pointe vers un terme du vocabulaire des formes d'œuvre de la BnF,
+et ce jeu de données n'en publie aucun libellé. `roman`, `poesi` et `te`
+arrivent donc tels quels : certains se lisent comme des mots, d'autres non. Le
+catalogue n'énonce par ailleurs aucune forme sur quantité d'œuvres, et ce
+silence est une forme non déclarée, pas un genre exclu. Garder les lignes qui
+portent un code trouve donc les œuvres qui le déclarent, jamais toutes les
+œuvres de cette forme : les codes sont rapportés, et aucun filtre n'est offert
+dessus.
+
 **Il n'écrit pas de biographies.** Le champ que la BnF appelle information
 biographique contient une profession sur la plupart des notices : celle de
 Rimbaud dit _Poète_, et c'est tout. `get_author` rend ce mot et dit ce que c'est.
@@ -287,7 +345,7 @@ Rimbaud dit _Poète_, et c'est tout. `get_author` rend ce mot et dit ce que c'es
 **Il n'expose aucun outil SPARQL brut.** Une requête arbitraire est une charge
 non bornée sur un service qu'une institution publique paie, et rien ici ne
 contrôlerait ce que l'appelant a écrit. Chacune des requêtes envoyées est l'une
-des neuf écrites à l'avance.
+des dix écrites à l'avance.
 
 ## La licence, et ce qu'elle vous demande
 

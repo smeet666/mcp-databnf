@@ -10,7 +10,7 @@
  *
  * So this is a licence boundary rather than a preference, and a test that only
  * checked the guard function would pass while a tool quietly fetched a
- * thumbnail. These tests drive the six tools with records full of Gallica
+ * thumbnail. These tests drive every tool with records full of Gallica
  * addresses and read back every request that left, which is the only evidence
  * that counts.
  */
@@ -22,6 +22,7 @@ import { runFindDigitised } from "../../src/tools/findDigitised.js";
 import { runGetAuthor } from "../../src/tools/getAuthor.js";
 import { runGetWork } from "../../src/tools/getWork.js";
 import { runListEditions } from "../../src/tools/listEditions.js";
+import { runListWorks } from "../../src/tools/listWorks.js";
 import { runSearchAuthors } from "../../src/tools/searchAuthors.js";
 import { runSearchWorks } from "../../src/tools/searchWorks.js";
 import { fakeEndpoint, payloadOf, silentLogger, testConfig, textOf } from "./helpers.js";
@@ -97,6 +98,11 @@ describe("every tool, driven with records full of Gallica addresses", () => {
       run: (c) => runListEditions(c, { work_id: "cb100000010", limit: 10, page: 1 }),
     },
     {
+      name: "list_works",
+      replies: [{ fixture: "author-works" }],
+      run: (c) => runListWorks(c, { author_id: "cb100000001", limit: 10, page: 1 }),
+    },
+    {
       name: "find_digitised",
       replies: [{ fixture: "types-person" }, { fixture: "digitised-person" }],
       run: (c) => runFindDigitised(c, { id: "cb100000001", kind: "auto", limit: 20 }),
@@ -162,7 +168,14 @@ describe("every tool, driven with records full of Gallica addresses", () => {
     expect(ocr).toHaveLength(1);
     // What the record carries is the address of the text and nothing else: the
     // shape has no field a passage could arrive in.
-    expect(Object.keys(ocr[0]!).sort()).toEqual(["ark", "from_id", "from_title", "role", "url"]);
+    expect(Object.keys(ocr[0]!).sort()).toEqual([
+      "ark",
+      "from_id",
+      "from_title",
+      "rendering",
+      "role",
+      "url",
+    ]);
   });
 });
 

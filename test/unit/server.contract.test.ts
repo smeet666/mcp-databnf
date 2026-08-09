@@ -14,6 +14,7 @@ import { findDigitisedOutput } from "../../src/tools/findDigitised.js";
 import { getAuthorOutput } from "../../src/tools/getAuthor.js";
 import { getWorkOutput } from "../../src/tools/getWork.js";
 import { listEditionsOutput } from "../../src/tools/listEditions.js";
+import { listWorksOutput } from "../../src/tools/listWorks.js";
 import { searchAuthorsOutput } from "../../src/tools/searchAuthors.js";
 import { searchWorksOutput } from "../../src/tools/searchWorks.js";
 import { fakeEndpoint, silentLogger, testConfig } from "./helpers.js";
@@ -24,6 +25,7 @@ const TOOLS = [
   "search_works",
   "get_work",
   "list_editions",
+  "list_works",
   "find_digitised",
 ] as const;
 
@@ -40,7 +42,7 @@ function registered() {
 }
 
 describe("the tools a client is offered", () => {
-  it("are the six this server has, under the names it documents", () => {
+  it("are the seven this server has, under the names it documents", () => {
     expect(Object.keys(registered()).sort()).toEqual([...TOOLS].sort());
   });
 
@@ -79,6 +81,7 @@ describe("what every output schema promises", () => {
     search_works: searchWorksOutput,
     get_work: getWorkOutput,
     list_editions: listEditionsOutput,
+    list_works: listWorksOutput,
     find_digitised: findDigitisedOutput,
   };
 
@@ -110,7 +113,9 @@ describe("what every output schema promises", () => {
     const published = z.toJSONSchema(findDigitisedOutput) as {
       properties?: Record<string, { description?: string }>;
     };
-    expect(published.properties?.counts?.description).toContain("count links, not documents");
+    expect(published.properties?.links_returned_by_role?.description).toContain(
+      "count the links returned here",
+    );
   });
 });
 
@@ -130,6 +135,10 @@ describe("the instructions a model reads first", () => {
 
   it("state that Gallica is described and never read", () => {
     expect(INSTRUCTIONS).toContain("never requests gallica.bnf.fr");
+  });
+
+  it("state that a list of a person's works is what the catalogue links", () => {
+    expect(INSTRUCTIONS).toContain("not a bibliography");
   });
 
   it("state that a rate limit is not an absence", () => {

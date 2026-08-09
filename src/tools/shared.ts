@@ -1,4 +1,4 @@
-/** Schemas, error mapping and rendering shared by the six tools. */
+/** Schemas, error mapping and rendering shared by the tools. */
 
 import { z } from "zod";
 import { BnfError } from "../errors.js";
@@ -50,7 +50,17 @@ export const retrievedAtSchema = z
 /** A link to a digitised document, which this server describes and never opens. */
 export const digitisedLinkSchema = z.object({
   ark: z.string().describe("The Gallica ARK identifying the document."),
-  url: z.string().describe("Open this to see the document. This server does not read it."),
+  url: z
+    .string()
+    .describe(
+      "The address the catalogue publishes, for a person to open. Read it beside 'rendering': an address asking for a rendering opens that view of the document rather than the document. This server does not read either.",
+    ),
+  rendering: z
+    .string()
+    .nullable()
+    .describe(
+      "The view the address asks Gallica for, read off what follows the ARK name in it, such as 'thumbnail' for a small image or 'item' for one leaf. Null when the address names the document itself. This says what was asked for, not what comes back.",
+    ),
   role: z
     .enum(["reproduction", "ocr", "depiction"])
     .describe(
@@ -155,9 +165,87 @@ export function truncate(text: string, maxChars: number): string {
   return `${text.slice(0, Math.max(0, maxChars - 1)).trimEnd()}…`;
 }
 
+/**
+ * What a caller is owed when the answer rests on a window that filled up.
+ *
+ * A text search reads a fixed window of the index and filters what came back,
+ * and the window is read first. A page can therefore hold every row the filter
+ * kept while the index holds records the reading never reached. Saying the
+ * window filled is a statement about the reading; no number of matches appears,
+ * because the index scores nothing and a count printed beside these rows would
+ * be read as a measure of them.
+ *
+ * The second sentence is the one a caller needs most: the window is filled in
+ * the order the index answers in, which is fixed by nothing, so two readings of
+ * one search can hold different records. A window with room to spare holds
+ * every match, which is what makes such an answer repeatable.
+ */
+export const WINDOW_FULL_CAVEAT =
+  "The window this search reads off the index came back full, so records carrying these words sit past what was read and this list is a part of the matches. Which records fill a full window is settled by the index as it answers, so another reading of the same search can bring back other rows. Requiring one more word narrows the reading and reaches what a full window leaves out.";
+
+/** What a full window makes of the field that says where the rows stop. */
+export const WINDOW_FULL_AND_NO_MORE =
+  "'has_more' is false because the rows of this window stop here, and the window came back full: it says where the reading stopped rather than that the catalogue holds nothing further under these words.";
+
+/** Wording used wherever a work-form code reaches a caller. */
+export const FORMS_CAVEAT =
+  "The codes under 'forms' are the terms of the BnF's work-form vocabulary a record points at, passed on as they stand: the vocabulary publishes no label for them here, so some read as words, such as 'roman' or 'poesi', and others, such as 'te', say nothing on their own. A work carrying no code is a work whose form the catalogue does not state.";
+
+/** What the codes cannot do, said where a caller holds enough rows to try. */
+export const FORMS_FILTER_CAVEAT =
+  "A form is stated on some works and left unsaid on others, so keeping the rows that carry one code finds the works declaring it and never all the works of that form.";
+
+/**
+ * What a caller is owed wherever one authority record is taken for a person.
+ *
+ * The BnF opens a heading for a name it met on a document and keeps it beside
+ * the fuller record for the same person, so a record can carry a name and
+ * nothing else. Every link and every field hangs off a record, which makes a
+ * silence on one of them a fact about that record alone.
+ */
+export const SEVERAL_RECORDS_CAVEAT =
+  "The BnF keeps more than one authority record for some people, and a record can carry a name and nothing else while a second one carries the dates, the occupation and the works. Everything here is read off this record, so search_authors under the name will show the other records the file holds and let you compare them.";
+
+/**
+ * What a caller is owed about the reading that turned their text into terms.
+ *
+ * Every term is mandatory, so the reading decides what the answer can be. Three
+ * things about it are invisible from the answer alone: a character that marks
+ * nothing having been removed, punctuation having reached no term, and a term
+ * of one character being required like any other. Each of them can be what
+ * emptied a list, and none of them shows in the rows.
+ */
+export function readingNotes(
+  reading: { terms: string[]; invisible: string[]; setAside: string[] },
+  field: "name" | "title",
+): string[] {
+  const notes: string[] = [];
+  const quoted = (values: readonly string[]): string =>
+    values.map((value) => `"${value}"`).join(", ");
+
+  if (reading.invisible.length > 0) {
+    notes.push(
+      `The text held ${reading.invisible.length} character(s) that mark nothing on a screen, such as a control character or a zero-width space. They were removed before the words were cut, so a word one of them sat inside was searched for whole rather than as two terms the index would each require.`,
+    );
+  }
+  if (reading.setAside.length > 0) {
+    notes.push(
+      `Only letters and digits reach the index: ${quoted(reading.setAside)} in the text ${reading.setAside.length === 1 ? "was" : "were"} set aside, and what was searched for is ${quoted(reading.terms)}.`,
+    );
+  }
+
+  const single = reading.terms.filter((term) => [...term].length === 1);
+  if (single.length > 0) {
+    notes.push(
+      `${quoted(single)} ${single.length === 1 ? "is a term of one character" : "are terms of one character"} and ${single.length === 1 ? "is" : "are"} required like any other: a record has to carry ${single.length === 1 ? "it" : "them"} in its ${field} for a row to be a match. Leaving ${single.length === 1 ? "it" : "them"} out widens the search.`,
+    );
+  }
+  return notes;
+}
+
 /** Wording used wherever a search that does not rank reaches a caller. */
 export const NO_RANKING =
-  "The full-text index answers whether a record matches, and it does not score how well. These rows are in the order the index returned them, so the row a person would call the obvious answer can sit anywhere in the list, or on a later page.";
+  "The full-text index answers whether a record matches, and it does not score how well. Rows are ordered by the address of the record, which measures nothing, so the row a person would call the obvious answer can sit anywhere in the list, or on a later page. That order is the one the pages are cut along, so reading page after page reaches every match once.";
 
 /**
  * What a page holding no row turned out to be.
@@ -189,9 +277,82 @@ export async function classifyEmptyPage(
   }
 }
 
+/** The class data.bnf.fr types a person with. */
+export const PERSON_TYPE = "http://xmlns.com/foaf/0.1/Person";
+
+/** The classes data.bnf.fr types a work with, one per vocabulary it uses. */
+export const WORK_TYPES: readonly string[] = [
+  "http://rdvocab.info/uri/schema/FRBRentitiesRDA/Work",
+  "http://rdaregistry.info/Elements/c/#C10001",
+];
+
+/**
+ * What the catalogue says an address is.
+ *
+ * An edition, an expression and a subject heading carry identifiers of the same
+ * shape as a person and a work, and a tool that reads one of them as the other
+ * asks a question it can never answer. The empty answer that comes back is
+ * indistinguishable from the BnF holding nothing, so the type is read and null
+ * is returned for everything else, which the caller refuses by name.
+ */
+export function recordKindOf(types: readonly string[]): "person" | "work" | null {
+  if (types.includes(PERSON_TYPE)) return "person";
+  if (types.some((type) => WORK_TYPES.includes(type))) return "work";
+  return null;
+}
+
+/** The years a BnF heading states in its brackets, read off the end of it. */
+function headingYears(label: string): { birth: number | null; death: number | null } {
+  const bracketed = /\(([^()]*)\)\s*$/.exec(label);
+  const [birth, death] = (bracketed?.[1] ?? "").split("-");
+  const year = (part: string | undefined): number | null =>
+    part !== undefined && /^\d{4}$/.test(part.trim()) ? Number(part.trim()) : null;
+  return { birth: year(birth), death: year(death) };
+}
+
+/**
+ * Where a heading and the dated fields of the same record disagree.
+ *
+ * A BnF heading writes the dates in brackets and the record states them again
+ * as numbers, and a correction applied to one side and not the other leaves the
+ * record saying two things. The numbers are what a caller compares to tell two
+ * people of one name apart, so a disagreement is reported: this server has no
+ * way of knowing which side a cataloguer meant, and picking one would hand over
+ * a date the record does not settle.
+ */
+export function headingYearConflicts(
+  label: string | null,
+  birthYear: number | null,
+  deathYear: number | null,
+): string[] {
+  if (label === null) return [];
+  const stated = headingYears(label);
+  const conflicts: string[] = [];
+  if (stated.birth !== null && birthYear !== null && stated.birth !== birthYear) {
+    conflicts.push(`${stated.birth} against 'birth_year' ${birthYear}`);
+  }
+  if (stated.death !== null && deathYear !== null && stated.death !== deathYear) {
+    conflicts.push(`${stated.death} against 'death_year' ${deathYear}`);
+  }
+  return conflicts;
+}
+
 /** Wording used wherever a Gallica link reaches a caller. */
 export const GALLICA_CAVEAT =
   "These are links for a person to open. This server reads the BnF catalogue and never requests gallica.bnf.fr, so it cannot say whether a document opens, what it contains, or on what terms it may be reused.";
+
+/**
+ * Wording used wherever the addresses under 'same_as' reach a caller.
+ *
+ * They are the BnF's own alignments, carried through character for character:
+ * an address is a key, and re-spelling one, by decoding an escape or by adding
+ * an escape of this server's own, produces an address the catalogue never
+ * published which can name another page or none. This server requests
+ * data.bnf.fr and nothing else, so whether any of them answers today is
+ * something it has not looked at and does not claim.
+ */
+export const ALIGNMENTS_CAVEAT =
+  "The addresses under 'same_as' are the BnF's own alignments to other files, passed on exactly as the catalogue publishes them, character for character. This server requests data.bnf.fr alone and does not open them, so it cannot say whether one still answers or what stands at the other end.";
 
 /** Wording used wherever a provisional record reaches a caller. */
 export const PROVISIONAL_CAVEAT =

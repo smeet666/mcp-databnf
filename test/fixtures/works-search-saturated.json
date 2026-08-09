@@ -1,0 +1,59 @@
+{
+  "head": {
+    "link": [],
+    "vars": ["work", "title", "date", "status", "creator", "creatorName", "windowRows"]
+  },
+  "results": {
+    "distinct": false,
+    "ordered": true,
+    "bindings": [
+      {
+        "work": {
+          "type": "uri",
+          "value": "http://data.bnf.fr/ark:/12148/cb100000041#about"
+        },
+        "title": {
+          "type": "literal",
+          "value": "Amour de loin",
+          "xml:lang": "fr"
+        },
+        "date": {
+          "type": "literal",
+          "value": "1898"
+        },
+        "status": {
+          "type": "literal",
+          "value": "fully established",
+          "xml:lang": "en"
+        }
+      },
+      {
+        "work": {
+          "type": "uri",
+          "value": "http://data.bnf.fr/ark:/12148/cb100000042#about"
+        },
+        "title": {
+          "type": "literal",
+          "value": "L'amour des jardins",
+          "xml:lang": "fr"
+        },
+        "date": {
+          "type": "literal",
+          "value": "1921"
+        },
+        "status": {
+          "type": "literal",
+          "value": "fully established",
+          "xml:lang": "en"
+        }
+      },
+      {
+        "windowRows": {
+          "type": "typed-literal",
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "value": "400"
+        }
+      }
+    ]
+  }
+}

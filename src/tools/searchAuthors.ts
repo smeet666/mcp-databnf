@@ -14,14 +14,27 @@ import type { BnfClient } from "../bnf/client.js";
 import { TEXT_WINDOW } from "../bnf/queries.js";
 import { invalidInput } from "../errors.js";
 import { strictInput } from "./arguments.js";
-import { NO_RANKING, classifyEmptyPage, ok, retrievedAtSchema, toToolError } from "./shared.js";
+import {
+  NO_RANKING,
+  WINDOW_FULL_AND_NO_MORE,
+  WINDOW_FULL_CAVEAT,
+  classifyEmptyPage,
+  headingYearConflicts,
+  ok,
+  readingNotes,
+  retrievedAtSchema,
+  toToolError,
+} from "./shared.js";
 import type { EmptyPage, ToolResult } from "./shared.js";
 
 export const searchAuthorsDescription = [
   "Find a person in the Bibliothèque nationale de France authority file by name, and get the identifier the other tools take.",
   "This matches the name the BnF records, so it takes a surname, a full name or both names in either order. It does not read biographies, so it cannot find a person from what they wrote or what they did.",
+  "It reads the person records and nothing else: an organisation, a conference or a place is outside it, and an answer holding no row says nothing about those.",
+  "The match is letter for letter, so a name written with other accents or under another transliteration is a different search: try the spellings a library would use before concluding the BnF holds nobody of that name.",
   "Several rows can carry one name: the BnF keeps more than one authority record for some people, and many people share a name. Read 'birth_year', 'death_year' and 'role' to tell them apart, and show the caller the choice rather than picking one.",
-  "Rows come back in the order the index returned them, which is not an order of relevance.",
+  "Rows come back ordered by the address of the record, which is not an order of relevance. That order is the one the pages are cut along, so paging through a search reaches every match once.",
+  "One search reads a fixed window of the index. 'index_window_full' says whether that window came back full: when it did, names sit past what was read, 'has_more' being false says where the reading stopped, and another reading of the same search can bring back other rows. Narrow the name to reach further.",
 ].join(" ");
 
 export const searchAuthorsInput = strictInput({
@@ -56,17 +69,31 @@ export const searchAuthorsOutput = z.object({
   name: z.string().describe("The name asked for."),
   words_searched: z
     .array(z.string())
-    .describe("The words the index was actually asked for, after punctuation was set aside."),
+    .describe(
+      "The terms the index required, each of which has to appear in the name. A word is cut at an apostrophe and at a hyphen before the index sees it, so a name written as one word can appear here as two, and a record carrying the pieces apart is a match.",
+    ),
   authors: z.array(authorRowSchema),
   page: z.number().int(),
   has_more: z
     .boolean()
-    .describe("Whether the index held at least one further match beyond this page."),
+    .describe(
+      "Whether the endpoint held at least one further row beyond this page, within the window the search read off the index. Read it alongside 'index_window_full': false on a full window says where the reading stopped rather than that the file holds nobody else.",
+    ),
+  index_window_full: z
+    .boolean()
+    .nullable()
+    .describe(
+      "Whether the fixed window this search reads off the index came back full. True means records carrying these words sit past what was read, so the rows here are a part of the matches and another reading can bring back other rows. False means the window held everything that matched. Null when the endpoint stated no occupancy, which claims nothing either way.",
+    ),
   retrieved_at: retrievedAtSchema,
   notes: z.array(z.string()),
 });
 
 export type SearchAuthorsArgs = z.infer<typeof searchAuthorsInput>;
+
+/** Wording used wherever the spelling of a name decides what a search reaches. */
+const SPELLING_CAVEAT =
+  "The index matches the words letter for letter, so a name written with other accents, or under another transliteration, is a different search reaching different records. A short answer is no evidence that the file holds nobody else of that name: ask again with the accents dropped, with them restored, and under the transliterations a library uses.";
 
 /**
  * The years a record states, written so that a silence stays a silence.
@@ -92,18 +119,37 @@ function lifespan(birthYear: number | null, deathYear: number | null): string {
  * many records match, so where the rows stop is a boundary it can point at and
  * not a number it can state.
  */
-function emptyPageNote(emptiness: EmptyPage, page: number, words: string[]): string {
+function emptyPageNote(
+  emptiness: EmptyPage,
+  page: number,
+  words: string[],
+  windowFull: boolean,
+): string {
   const quoted = words.map((word) => `"${word}"`).join(", ");
+  // A window filled by records of another kind leaves the filter nothing to
+  // keep, and the page that comes back is the same empty page an unmatched name
+  // produces. Only one of the two is an absence, and the window says which.
+  if (windowFull) {
+    return `The window this search reads off the index came back full, and no person record survived the reading: every row of it named something the authority file types as another kind of heading. Whether a person carries ${quoted} in a name is unanswered here rather than answered no. Narrow the search, by adding a word or by writing a fuller form of the name, so that the window reaches further into the index.`;
+  }
   if (emptiness === "past_the_end") {
     return `Page ${page} holds no row because it sits past the last row of this search. Records do carry ${quoted} in a name, and they are on earlier pages: call again with page=1, or with a lower page number, to read them.`;
   }
   if (emptiness === "undetermined") {
     return `Page ${page} holds no row, and reading the first page of the same search to find out why did not answer. This is either a name carrying ${quoted} matching no record, or a page sitting past the last row of a search that does match. Call again with page=1: rows there mean the second.`;
   }
-  return `No record in the BnF authority file carries every one of these words in a name: ${quoted}. A search here reads names, so a person known by a pen name is found under that name rather than their own.`;
+  return `No person record in the BnF authority file carries every one of these words in a name: ${quoted}. This search reads the person records and nothing else, so an organisation, a conference, a place or a subject heading is outside what was looked at, whether or not the BnF holds a heading for one. It reads names, so a person known by a pen name is found under that name rather than their own.`;
 }
 
-function emptyPageBody(emptiness: EmptyPage, page: number, name: string): string {
+function emptyPageBody(
+  emptiness: EmptyPage,
+  page: number,
+  name: string,
+  windowFull: boolean,
+): string {
+  if (windowFull) {
+    return `No person record survived the reading for "${name}", out of a window of the index that came back full. Narrow the search.`;
+  }
   if (emptiness === "past_the_end") {
     return `Page ${page} of the search for "${name}" holds no row: it sits past the last row. Call again with page=1.`;
   }
@@ -118,7 +164,8 @@ export async function runSearchAuthors(
   args: SearchAuthorsArgs,
 ): Promise<ToolResult> {
   try {
-    const words = client.words(args.name);
+    const reading = client.searchReading(args.name);
+    const words = reading.words;
     if (words.length === 0) {
       return toToolError(
         invalidInput(
@@ -143,8 +190,31 @@ export async function runSearchAuthors(
     }
     const { data, cached, retrievedAt } = await client.searchAuthors(args.name, args.limit, offset);
 
+    const terms = reading.terms;
+    const windowFull = data.indexWindowFull ?? null;
+
     const notes: string[] = [];
     if (cached) notes.push("Served from this server's short-lived in-memory cache.");
+
+    // What bounds the answer is said before what qualifies it. The text block
+    // fits a limited trailer and drops the last notes to keep the credit, and a
+    // caller losing this one is left reading a part of the matches as all of
+    // them.
+    if (windowFull) {
+      notes.push(WINDOW_FULL_CAVEAT);
+      if (!data.hasMore) notes.push(WINDOW_FULL_AND_NO_MORE);
+    }
+
+    // A caller checking why a row is on the list reads the terms, so the ones
+    // the index made out of a word are traced back to it before anything that
+    // merely qualifies the answer.
+    const split = words.filter((word) => /['-]/u.test(word));
+    if (split.length > 0) {
+      notes.push(
+        `${split.map((word) => `"${word}"`).join(", ")} reached the index as separate terms: it cuts a word at an apostrophe and at a hyphen, and requires each piece to appear in the name rather than in that arrangement, so a record writing the pieces apart is a match.`,
+      );
+    }
+    notes.push(...readingNotes(reading, "name"));
 
     const authors = data.rows.map((row) => ({
       id: row.id,
@@ -157,6 +227,24 @@ export async function runSearchAuthors(
     }));
 
     if (authors.length > 0) notes.push(NO_RANKING);
+
+    // The index compares the characters it was given against the characters a
+    // cataloguer entered. A name the BnF holds under a transliteration of its
+    // own is therefore reachable only by that spelling, and the answer to any
+    // other one is a short list or none at all, neither of which looks partial.
+    notes.push(SPELLING_CAVEAT);
+
+    const disputed = authors
+      .map((author) => ({
+        label: author.label ?? author.name,
+        conflicts: headingYearConflicts(author.label, author.birth_year, author.death_year),
+      }))
+      .filter((row) => row.conflicts.length > 0);
+    if (disputed.length > 0) {
+      notes.push(
+        `${disputed.map((row) => `"${row.label}" states ${row.conflicts.join(", and ")}`).join("; ")}. A record stating its dates twice can disagree with itself, and the BnF publishes both. These fields are what tells two people of one name apart, so open source_url before telling them apart by a date the record disputes.`,
+      );
+    }
 
     // Several records under one name is the case this tool exists to surface.
     const repeated = new Map<string, number>();
@@ -181,21 +269,20 @@ export async function runSearchAuthors(
     // does match stopping earlier, look identical from the page alone.
     let emptiness: EmptyPage = "absent";
     if (authors.length === 0) {
-      emptiness = await classifyEmptyPage(args.page, async () => {
-        const first = await client.searchAuthors(args.name, 1, 0);
-        return first.data.rows.length > 0;
-      });
-      notes.push(emptyPageNote(emptiness, args.page, words));
-    }
-    if (words.length < args.name.trim().split(/\s+/).length) {
-      notes.push(
-        `The index was asked for ${words.map((word) => `"${word}"`).join(", ")}; anything in the name that was not a word was set aside.`,
-      );
+      // A full window already accounts for the page, and reading the search
+      // from its first row would answer a question the window has settled.
+      emptiness = windowFull
+        ? "absent"
+        : await classifyEmptyPage(args.page, async () => {
+            const first = await client.searchAuthors(args.name, 1, 0);
+            return first.data.rows.length > 0;
+          });
+      notes.push(emptyPageNote(emptiness, args.page, terms, windowFull === true));
     }
 
     const body =
       authors.length === 0
-        ? emptyPageBody(emptiness, args.page, args.name)
+        ? emptyPageBody(emptiness, args.page, args.name, windowFull === true)
         : `${authors.length} record(s) for "${args.name}":\n${authors
             .map((author, index) => {
               const life = lifespan(author.birth_year, author.death_year);
@@ -207,10 +294,11 @@ export async function runSearchAuthors(
     return ok(
       {
         name: args.name,
-        words_searched: words,
+        words_searched: terms,
         authors,
         page: args.page,
         has_more: data.hasMore,
+        index_window_full: windowFull,
         retrieved_at: retrievedAt,
         notes,
       },

@@ -23,6 +23,7 @@ import { runFindDigitised } from "../../src/tools/findDigitised.js";
 import { runGetAuthor } from "../../src/tools/getAuthor.js";
 import { runGetWork } from "../../src/tools/getWork.js";
 import { runListEditions } from "../../src/tools/listEditions.js";
+import { runListWorks } from "../../src/tools/listWorks.js";
 import { runSearchAuthors } from "../../src/tools/searchAuthors.js";
 import { runSearchWorks } from "../../src/tools/searchWorks.js";
 
@@ -125,6 +126,20 @@ live("data.bnf.fr, live", () => {
     expect(links.length).toBeGreaterThan(0);
     for (const link of links) expect(link.url).toContain("gallica.bnf.fr");
     expect((payload.notes as string[]).join(" ")).toContain("never requests gallica.bnf.fr");
+  });
+
+  it("list_works walks from a person to the works credited to them, and says what the link misses", async () => {
+    const result = await runListWorks(client, { author_id: RIMBAUD, limit: 10, page: 1 });
+    show("list_works", result);
+    const payload = structured(result);
+    const works = payload.works as Array<{ id: string; status: string; forms: string[] }>;
+
+    expect(works.length).toBeGreaterThan(0);
+    for (const work of works) expect(["established", "provisional"]).toContain(work.status);
+    const notes = (payload.notes as string[]).join(" ");
+    expect(notes).toContain("not a bibliography");
+    expect(notes).toContain("cannot be narrowed");
+    expect(Object.keys(payload)).not.toContain("total");
   });
 
   it("an identifier the BnF describes nowhere comes back as an absence, not as an empty record", async () => {

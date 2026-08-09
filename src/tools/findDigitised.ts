@@ -16,27 +16,22 @@
 
 import { z } from "zod";
 import type { BnfClient } from "../bnf/client.js";
-import { notFound } from "../errors.js";
+import { invalidInput, notFound } from "../errors.js";
 import type { DigitisedLink } from "../types.js";
 import { strictInput } from "./arguments.js";
 import {
   GALLICA_CAVEAT,
   digitisedLinkSchema,
   ok,
+  recordKindOf,
   retrievedAtSchema,
   toToolError,
 } from "./shared.js";
 import type { ToolResult } from "./shared.js";
 
-const PERSON_TYPE = "http://xmlns.com/foaf/0.1/Person";
-const WORK_TYPES = [
-  "http://rdvocab.info/uri/schema/FRBRentitiesRDA/Work",
-  "http://rdaregistry.info/Elements/c/#C10001",
-];
-
 export const findDigitisedDescription = [
   "Gather the digitised documents the Bibliothèque nationale de France catalogue attaches to one person or one work, and return them as links.",
-  "Give the identifier of either; the tool reads what kind of record it is and follows the right path. For a work it walks the editions; for a person it takes the images on the record and the digitised editions of the works they are credited with.",
+  "Give the identifier of either; the tool asks the catalogue what kind of record it is and follows the right path. For a work it walks the editions; for a person it takes the images on the record and the digitised editions of the works they are credited with. The 'kind' returned is what the catalogue types the record as.",
   "Every result is a link for someone to open. This server reads the BnF catalogue and never requests gallica.bnf.fr, so it reports nothing about what is at the other end: not whether the document opens, not what it contains, not on what terms it may be reused.",
   "It returns links and nothing else: no publisher, no date, no ISBN. Use list_editions when which edition a copy belongs to matters.",
   "A 'depiction' illustrates a record and can be a page that merely mentions the subject. A 'reproduction' is an edition digitised. An 'ocr' link names a machine-read text of a document, which this server does not fetch.",
@@ -54,7 +49,7 @@ export const findDigitisedInput = strictInput({
     .enum(["auto", "person", "work"])
     .default("auto")
     .describe(
-      "Which kind of record the identifier names. 'auto' asks the catalogue, which costs one extra query.",
+      "What you expect the identifier to name. The catalogue is asked either way, and a kind it contradicts is refused rather than followed. 'auto' states no expectation.",
     ),
   limit: z.number().int().min(1).max(200).default(40),
 });
@@ -63,13 +58,15 @@ export const findDigitisedOutput = z.object({
   id: z.string(),
   kind: z.enum(["person", "work"]).describe("What the catalogue types this record as."),
   links: z.array(digitisedLinkSchema),
-  counts: z
+  links_returned_by_role: z
     .object({
       reproduction: z.number().int(),
       ocr: z.number().int(),
       depiction: z.number().int(),
     })
-    .describe("Links returned on this page, by role. These count links, not documents."),
+    .describe(
+      "How many of the links in this answer carry each role. These count the links returned here, which is neither a count of documents nor a count of what the catalogue attaches: several links can name one document, and 'has_more' says when links were left out.",
+    ),
   has_more: z.boolean(),
   retrieved_at: retrievedAtSchema,
   notes: z.array(z.string()),
@@ -84,44 +81,49 @@ export async function runFindDigitised(
   try {
     const id = client.identify(args.id);
 
-    let kind: "person" | "work";
     const notes: string[] = [];
 
-    if (args.kind === "auto") {
-      // A provisional identifier can only be a work, so the question is settled
-      // without asking.
-      if (id.kind === "temp-work") {
-        kind = "work";
-      } else {
-        const types = await client.types(id);
-        if (types.data.length === 0) {
-          return toToolError(
-            notFound(`data.bnf.fr describes nothing at "${id.id}".`, {
-              hint: "Find the identifier with search_authors or search_works rather than writing one.",
-              url: id.pageUrl,
-            }),
-          );
-        }
-        // An edition, an expression and a subject heading all have identifiers
-        // of the same shape. Reading one of them as a work asks a question it
-        // can never answer, and the empty answer reads as the BnF having
-        // digitised nothing.
-        if (types.data.includes(PERSON_TYPE)) kind = "person";
-        else if (types.data.some((type) => WORK_TYPES.includes(type))) kind = "work";
-        else {
-          return toToolError(
-            notFound(
-              `"${id.id}" is described by data.bnf.fr, and it is neither a person nor a work: it is typed ${types.data.join(", ")}.`,
-              {
-                hint: "This tool follows a person or a work. For one edition, list_editions carries the digitised copies alongside the imprint.",
-                url: id.pageUrl,
-              },
-            ),
-          );
-        }
-      }
+    // The path a person is followed by and the path a work is followed by
+    // reach different links, so the wrong one answers with part of the record
+    // or with none of it. The answer names the kind it followed, and that name
+    // is only worth reading if the catalogue is what settled it, so the type is
+    // read here whatever the caller wrote.
+    let kind: "person" | "work";
+    if (id.kind === "temp-work") {
+      // Only a work is addressed under temp-work, so the address settles it.
+      kind = "work";
     } else {
-      kind = args.kind;
+      const types = await client.types(id);
+      if (types.data.length === 0) {
+        return toToolError(
+          notFound(`data.bnf.fr describes nothing at "${id.id}".`, {
+            hint: "Find the identifier with search_authors or search_works rather than writing one.",
+            url: id.pageUrl,
+          }),
+        );
+      }
+      const found = recordKindOf(types.data);
+      if (found === null) {
+        return toToolError(
+          notFound(
+            `"${id.id}" is described by data.bnf.fr, and it is neither a person nor a work: it is typed ${types.data.join(", ")}.`,
+            {
+              hint: "This tool follows a person or a work. For one edition, list_editions carries the digitised copies alongside the imprint.",
+              url: id.pageUrl,
+            },
+          ),
+        );
+      }
+      kind = found;
+    }
+
+    if (args.kind !== "auto" && args.kind !== kind) {
+      return toToolError(
+        invalidInput(
+          `The call states that "${id.id}" is a ${args.kind}, and data.bnf.fr describes it as a ${kind}.`,
+          `Leave 'kind' out, or pass '${kind}'. Following the ${args.kind} path over a ${kind} record answers with part of the record or with none of it, and nothing in that answer would say so.`,
+        ),
+      );
     }
 
     const { data, cached, retrievedAt } =
@@ -134,6 +136,7 @@ export async function runFindDigitised(
     const links = data.rows.map((link) => ({
       ark: link.ark,
       url: link.url,
+      rendering: link.rendering,
       role: link.role,
       from_id: link.fromId,
       from_title: link.fromTitle,
@@ -145,10 +148,17 @@ export async function runFindDigitised(
       depiction: countRole(data.rows, "depiction"),
     };
 
+    const rendered = links.filter((link) => link.rendering !== null);
+
     if (links.length > 0) notes.push(GALLICA_CAVEAT);
     if (counts.depiction > 0) {
       notes.push(
         `${counts.depiction === 1 ? "One of these is an image" : `${counts.depiction} of these are images`} the catalogue uses to illustrate the record. Such an image can be a portrait, a title page, or a newspaper page that mentions the subject in passing, and the catalogue does not say which.`,
+      );
+    }
+    if (rendered.length > 0) {
+      notes.push(
+        `${rendered.length === 1 ? "One of these addresses opens" : `${rendered.length} of these addresses open`} a rendering of a document rather than the document: what follows the ARK name in the address, such as 'thumbnail', is the view being asked for, and 'ark' names the document that view was taken from. Read 'rendering' before quoting a link as the document itself.`,
       );
     }
     if (counts.ocr > 0) {
@@ -161,6 +171,9 @@ export async function runFindDigitised(
         args.limit >= 200
           ? "The catalogue points at more documents than this tool will return in one answer, and it does not page: 200 is the ceiling. Read the editions with list_editions to reach the rest, one page at a time."
           : `More links exist than were returned. Raise 'limit' to see more of them, up to 200. This tool does not page, so a higher limit re-reads the links already shown rather than continuing after them.`,
+      );
+      notes.push(
+        "The figures under 'links_returned_by_role' count the links in this answer, so they fall short of what the catalogue attaches by however much was left out.",
       );
     }
     if (links.length === 0) {
@@ -184,7 +197,7 @@ export async function runFindDigitised(
         id: id.id,
         kind,
         links,
-        counts,
+        links_returned_by_role: counts,
         has_more: data.hasMore,
         retrieved_at: retrievedAt,
         notes,

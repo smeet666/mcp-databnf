@@ -1,0 +1,36 @@
+{
+  "head": {
+    "link": [],
+    "vars": ["person", "name", "label", "birthYear", "deathYear", "role"]
+  },
+  "results": {
+    "distinct": false,
+    "ordered": true,
+    "bindings": [
+      {
+        "person": {
+          "type": "uri",
+          "value": "http://data.bnf.fr/ark:/12148/cb100000007#about"
+        },
+        "name": {
+          "type": "literal",
+          "value": "Aurélien Boix"
+        },
+        "label": {
+          "type": "literal",
+          "value": "Aurélien Boix (1852-19..)",
+          "xml:lang": "fr"
+        },
+        "birthYear": {
+          "type": "typed-literal",
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "value": "1825"
+        },
+        "role": {
+          "type": "literal",
+          "value": "Médecin"
+        }
+      }
+    ]
+  }
+}

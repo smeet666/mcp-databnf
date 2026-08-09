@@ -36,6 +36,16 @@ const results = (vars, bindings) => ({
   results: { distinct: false, ordered: true, bindings },
 });
 
+/**
+ * The row a text search carries its window occupancy on.
+ *
+ * The endpoint answers a search with the rows of the page and one row of its
+ * own holding nothing but the number of rows the index window returned before
+ * the type filter ran. It binds no entity, so a fixture places it alongside the
+ * page rows exactly as the service sends it.
+ */
+const windowRows = (count) => ({ windowRows: int(count) });
+
 const ark = (id) => `http://data.bnf.fr/ark:/12148/${id}`;
 const person = (id) => uri(`${ark(id)}#about`);
 const work = (id) => uri(`${ark(id)}#about`);
@@ -52,7 +62,7 @@ const write = (name, value) => {
 write(
   "authors-search",
   results(
-    ["person", "name", "label", "birthYear", "deathYear", "role"],
+    ["person", "name", "label", "birthYear", "deathYear", "role", "windowRows"],
     [
       {
         person: person("cb100000001"),
@@ -75,6 +85,92 @@ write(
         birthYear: int(1902),
         deathYear: int(1988),
         role: lit("Botaniste"),
+      },
+      // A window with room to spare: everything the index matched was read.
+      windowRows(3),
+    ],
+  ),
+);
+
+/**
+ * A search whose index window came back full.
+ *
+ * The page holds every row it was asked for and the endpoint sent no row
+ * beyond it, so the page alone reads as the end of the matches. The window
+ * says otherwise: it was filled, and the index holds names the search never
+ * reached.
+ */
+write(
+  "authors-search-saturated",
+  results(
+    ["person", "name", "label", "birthYear", "deathYear", "role", "windowRows"],
+    [
+      { person: person("cb100000031"), name: lit("Marie Aveline") },
+      { person: person("cb100000032"), name: lit("Marie Bonneval") },
+      windowRows(400),
+    ],
+  ),
+);
+
+/**
+ * A full window from which the type filter kept nothing.
+ *
+ * The window was filled by records of another kind, so no person survived it.
+ * A page of no rows here is a statement about the window rather than about the
+ * authority file.
+ */
+write(
+  "authors-search-saturated-empty",
+  results(["person", "name", "windowRows"], [windowRows(400)]),
+);
+
+/**
+ * A record whose heading and whose dated fields disagree.
+ *
+ * A cataloguer corrected one side and left the other, so the brackets of the
+ * heading state one year of birth and `bnf-onto:firstYear` states another. The
+ * shape is the live one: both are published, and nothing on the record says
+ * which was meant.
+ */
+write(
+  "authors-year-conflict",
+  results(
+    ["person", "name", "label", "birthYear", "deathYear", "role"],
+    [
+      {
+        person: person("cb100000007"),
+        name: lit("Aurélien Boix"),
+        label: lit("Aurélien Boix (1852-19..)", "fr"),
+        birthYear: int(1825),
+        role: lit("Médecin"),
+      },
+    ],
+  ),
+);
+
+/** The same disagreement on the record read in full. */
+write(
+  "author-year-conflict",
+  results(
+    ["p", "o", "lang"],
+    [
+      {
+        p: uri("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
+        o: uri("http://xmlns.com/foaf/0.1/Person"),
+      },
+      { p: uri("http://xmlns.com/foaf/0.1/name"), o: lit("Aurélien Boix") },
+      { p: uri("http://vocab.org/bio/0.1/birth"), o: lit("1825-07-12") },
+      { p: uri("http://vocab.org/bio/0.1/death"), o: lit("19..") },
+      { p: uri("http://data.bnf.fr/ontology/bnf-onto/firstYear"), o: int(1825) },
+      {
+        p: uri("http://www.w3.org/2004/02/skos/core#prefLabel"),
+        o: lit("Aurélien Boix (1852-19..)", "fr"),
+        lang: lit("fr"),
+      },
+      {
+        p: uri("http://www.w3.org/2004/02/skos/core#altLabel"),
+        o: lit("Aurélien-Charles-Marie Boix (1852-19..)", "fr"),
+        lang: lit("fr"),
       },
     ],
   ),
@@ -146,6 +242,13 @@ write(
         p: uri("http://www.w3.org/2002/07/owl#sameAs"),
         o: uri("http://fr.dbpedia.org/resource/Camille_Ardouin"),
       },
+      // An address whose path carries an accent and a bracket, which reach it
+      // percent-encoded. It is what a caller opens, so every character of it
+      // has to survive the answer untouched.
+      {
+        p: uri("http://www.w3.org/2000/01/rdf-schema#seeAlso"),
+        o: uri("http://fr.wikipedia.org/wiki/Camille_Ardouin_%28po%C3%A8te%29"),
+      },
       // An alignment pointing back at the record itself, which says nothing.
       {
         p: uri("http://www.w3.org/2002/07/owl#sameAs"),
@@ -209,6 +312,37 @@ write(
   ),
 );
 
+/**
+ * An authority record carrying a name and nothing else.
+ *
+ * The BnF opens a heading for a name it met on a document and keeps it beside
+ * the fuller record for the same person. Such a record dates the person
+ * nowhere: it states no birth, no death, no occupation, and the fuller record
+ * is where the dates live. The shape is the live one, at fourteen triples.
+ */
+write(
+  "author-name-only",
+  results(
+    ["p", "o", "lang"],
+    [
+      {
+        p: uri("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
+        o: uri("http://xmlns.com/foaf/0.1/Person"),
+      },
+      { p: uri("http://xmlns.com/foaf/0.1/name"), o: lit("Pierre Fontenay") },
+      {
+        p: uri("http://www.w3.org/1999/02/22-rdf-syntax-ns#type"),
+        o: uri("http://www.w3.org/2004/02/skos/core#Concept"),
+      },
+      {
+        p: uri("http://www.w3.org/2004/02/skos/core#prefLabel"),
+        o: lit("Pierre Fontenay", "fr"),
+        lang: lit("fr"),
+      },
+    ],
+  ),
+);
+
 /** What the endpoint answers for an address it describes as something else. */
 write("types-person", results(["type"], [{ type: uri("http://xmlns.com/foaf/0.1/Person") }]));
 write(
@@ -228,7 +362,7 @@ write("types-empty", results(["type"], []));
 write(
   "works-search",
   results(
-    ["work", "title", "date", "status", "creator", "creatorName"],
+    ["work", "title", "date", "status", "creator", "creatorName", "windowRows"],
     [
       // A study of the poem, which matches the same words as the poem itself.
       {
@@ -264,6 +398,37 @@ write(
         date: lit("1911"),
         status: lit("fully established", "en"),
       },
+      // A window with room to spare: everything the index matched was read.
+      windowRows(4),
+    ],
+  ),
+);
+
+/**
+ * A title search whose index window came back full.
+ *
+ * The window is read before the type filter runs, so a page can be short of
+ * what the index matched while still holding every row the filter kept. Two
+ * works survive here out of a window of four hundred rows.
+ */
+write(
+  "works-search-saturated",
+  results(
+    ["work", "title", "date", "status", "creator", "creatorName", "windowRows"],
+    [
+      {
+        work: work("cb100000041"),
+        title: lit("Amour de loin", "fr"),
+        date: lit("1898"),
+        status: lit("fully established", "en"),
+      },
+      {
+        work: work("cb100000042"),
+        title: lit("L'amour des jardins", "fr"),
+        date: lit("1921"),
+        status: lit("fully established", "en"),
+      },
+      windowRows(400),
     ],
   ),
 );
@@ -488,6 +653,63 @@ write(
   "digitised-empty",
   results(["rank", "edition", "title", "reproduction", "ocr", "depiction"], []),
 );
+
+/* ── The works one person is credited with as their creator ── */
+
+/**
+ * A person's works, with the awkward properties the real listing has.
+ *
+ * One work carries two form codes and therefore arrives as two rows. One work
+ * carries none, which is the catalogue recording no genre for it. One is
+ * provisional. The last row names an address this client cannot read, so a page
+ * that came back short can be told from a catalogue holding little.
+ */
+write(
+  "author-works",
+  results(
+    ["work", "title", "date", "year", "status", "form"],
+    [
+      {
+        work: work("cb100000010"),
+        title: lit("Le vent d'octobre", "fr"),
+        date: lit("1902"),
+        year: int(1902),
+        status: lit("fully established", "en"),
+        form: uri("http://data.bnf.fr/vocabulary/work-form/te"),
+      },
+      {
+        work: work("cb100000010"),
+        title: lit("Le vent d'octobre", "fr"),
+        date: lit("1902"),
+        year: int(1902),
+        status: lit("fully established", "en"),
+        form: uri("http://data.bnf.fr/vocabulary/work-form/poesi"),
+      },
+      // A work the catalogue records no form for.
+      {
+        work: work("cb100000013"),
+        title: lit("Sonnets d'hiver", "fr"),
+        date: lit("1908"),
+        year: int(1908),
+        status: lit("fully established", "en"),
+      },
+      {
+        work: temp("b7c1d2e3f405162738495a6b7c8d9e0f"),
+        title: lit("Notes de voyage", "fr"),
+        date: lit("1931"),
+        year: int(1931),
+        status: lit("provisional", "en"),
+        form: uri("http://data.bnf.fr/vocabulary/work-form/te"),
+      },
+      {
+        work: uri("http://data.bnf.fr/something-else/9000/#about"),
+        title: lit("An address this client cannot read"),
+      },
+    ],
+  ),
+);
+
+write("author-works-empty", results(["work", "title", "date", "year", "status", "form"], []));
 
 /* ── Answers this server has to refuse to read ── */
 

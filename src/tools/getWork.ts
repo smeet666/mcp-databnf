@@ -15,6 +15,8 @@ import { z } from "zod";
 import type { BnfClient } from "../bnf/client.js";
 import { strictInput } from "./arguments.js";
 import {
+  ALIGNMENTS_CAVEAT,
+  FORMS_CAVEAT,
   GALLICA_CAVEAT,
   PROVISIONAL_CAVEAT,
   digitisedLinkSchema,
@@ -27,6 +29,7 @@ import type { ToolResult } from "./shared.js";
 export const getWorkDescription = [
   "Read one work's record in the Bibliothèque nationale de France catalogue, by the identifier search_works returns.",
   "It carries the title, everyone the record credits, the date the BnF gives the work, its language, its form and its subject with the Dewey class.",
+  "'forms' holds the work-form vocabulary's own terms, which carry no label in this dataset, so some read as words and some do not. A record stating none has a form the catalogue does not state.",
   "'status' says whether the record is established or provisional, and 'status_statement' repeats what the catalogue itself states. A provisional identifier can change, so cite an established one where there is a choice.",
   "'expression_count' counts the expressions the record links, which is not a count of published editions: use list_editions for those.",
 ].join(" ");
@@ -58,7 +61,9 @@ export const getWorkOutput = z.object({
     languages: z.array(z.string()).describe("ISO 639-2 codes."),
     forms: z
       .array(z.string())
-      .describe("Forms from the BnF work-form vocabulary, such as 'poesi' for poetry."),
+      .describe(
+        "Terms of the BnF work-form vocabulary, as the terms themselves. The vocabulary publishes no label for them here, so they are not translated: some read as words, such as 'poesi', and some do not, such as 'te'. An empty list is a form the record does not state.",
+      ),
     subjects: z.array(z.string()).describe("Subjects in the words of the record."),
     dewey_classes: z.array(z.string()),
     status: z.enum(["established", "provisional"]),
@@ -74,7 +79,12 @@ export const getWorkOutput = z.object({
         "Expressions the record links: translations, adaptations, recordings. This is not a count of published editions. Null when the record was longer than one query reads, since the number would then be the ceiling rather than the count.",
       ),
     same_as: z.record(z.string(), z.array(z.string())),
-    catalogue_url: z.string().nullable(),
+    catalogue_url: z
+      .string()
+      .nullable()
+      .describe(
+        "The address of this record in the BnF general catalogue, as the record itself points at it. Null when the record states none, which is the ordinary case on work records: it is a silence in the record rather than a record the general catalogue lacks, and no address is built in its place.",
+      ),
     source_url: z.string(),
   }),
   depictions: z.array(digitisedLinkSchema).optional(),
@@ -118,12 +128,19 @@ export async function runGetWork(client: BnfClient, args: GetWorkArgs): Promise<
         `The record links ${data.expressionCount} expression(s): translations, adaptations and recordings of this work. Published editions are a separate count, and list_editions is what reads them.`,
       );
     }
+    // The codes are printed in the body and in the payload, so what they are
+    // travels with them: a reader shown 'poesi' beside 'te' has no way of
+    // telling a word from an opaque term without being told.
+    if (data.forms.length > 0) notes.push(FORMS_CAVEAT);
     if (data.creators.length === 0) {
       notes.push(
         "The record credits nobody with this work. That is normal for anonymous and traditional works, and it also happens on records a cataloguer has not finished.",
       );
     }
-    if (data.depictions.length > 0) notes.push(GALLICA_CAVEAT);
+    if (Object.keys(data.sameAs).length > 0) notes.push(ALIGNMENTS_CAVEAT);
+    // The caveat is about links a caller is holding. On an answer that returns
+    // none, it describes a list that is not there and reads as a list withheld.
+    if (args.include_depictions && data.depictions.length > 0) notes.push(GALLICA_CAVEAT);
 
     const structured: Record<string, unknown> = {
       work: {
@@ -153,6 +170,7 @@ export async function runGetWork(client: BnfClient, args: GetWorkArgs): Promise<
       structured.depictions = data.depictions.map((link) => ({
         ark: link.ark,
         url: link.url,
+        rendering: link.rendering,
         role: link.role,
         from_id: link.fromId,
         from_title: link.fromTitle,

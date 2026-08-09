@@ -1,0 +1,11 @@
+{
+  "head": {
+    "link": [],
+    "vars": ["work", "title", "date", "year", "status", "form"]
+  },
+  "results": {
+    "distinct": false,
+    "ordered": true,
+    "bindings": []
+  }
+}

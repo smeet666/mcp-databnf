@@ -1,0 +1,134 @@
+{
+  "head": {
+    "link": [],
+    "vars": ["work", "title", "date", "year", "status", "form"]
+  },
+  "results": {
+    "distinct": false,
+    "ordered": true,
+    "bindings": [
+      {
+        "work": {
+          "type": "uri",
+          "value": "http://data.bnf.fr/ark:/12148/cb100000010#about"
+        },
+        "title": {
+          "type": "literal",
+          "value": "Le vent d'octobre",
+          "xml:lang": "fr"
+        },
+        "date": {
+          "type": "literal",
+          "value": "1902"
+        },
+        "year": {
+          "type": "typed-literal",
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "value": "1902"
+        },
+        "status": {
+          "type": "literal",
+          "value": "fully established",
+          "xml:lang": "en"
+        },
+        "form": {
+          "type": "uri",
+          "value": "http://data.bnf.fr/vocabulary/work-form/te"
+        }
+      },
+      {
+        "work": {
+          "type": "uri",
+          "value": "http://data.bnf.fr/ark:/12148/cb100000010#about"
+        },
+        "title": {
+          "type": "literal",
+          "value": "Le vent d'octobre",
+          "xml:lang": "fr"
+        },
+        "date": {
+          "type": "literal",
+          "value": "1902"
+        },
+        "year": {
+          "type": "typed-literal",
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "value": "1902"
+        },
+        "status": {
+          "type": "literal",
+          "value": "fully established",
+          "xml:lang": "en"
+        },
+        "form": {
+          "type": "uri",
+          "value": "http://data.bnf.fr/vocabulary/work-form/poesi"
+        }
+      },
+      {
+        "work": {
+          "type": "uri",
+          "value": "http://data.bnf.fr/ark:/12148/cb100000013#about"
+        },
+        "title": {
+          "type": "literal",
+          "value": "Sonnets d'hiver",
+          "xml:lang": "fr"
+        },
+        "date": {
+          "type": "literal",
+          "value": "1908"
+        },
+        "year": {
+          "type": "typed-literal",
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "value": "1908"
+        },
+        "status": {
+          "type": "literal",
+          "value": "fully established",
+          "xml:lang": "en"
+        }
+      },
+      {
+        "work": {
+          "type": "uri",
+          "value": "http://data.bnf.fr/temp-work/b7c1d2e3f405162738495a6b7c8d9e0f/#about"
+        },
+        "title": {
+          "type": "literal",
+          "value": "Notes de voyage",
+          "xml:lang": "fr"
+        },
+        "date": {
+          "type": "literal",
+          "value": "1931"
+        },
+        "year": {
+          "type": "typed-literal",
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "value": "1931"
+        },
+        "status": {
+          "type": "literal",
+          "value": "provisional",
+          "xml:lang": "en"
+        },
+        "form": {
+          "type": "uri",
+          "value": "http://data.bnf.fr/vocabulary/work-form/te"
+        }
+      },
+      {
+        "work": {
+          "type": "uri",
+          "value": "http://data.bnf.fr/something-else/9000/#about"
+        },
+        "title": {
+          "type": "literal",
+          "value": "An address this client cannot read"
+        }
+      }
+    ]
+  }
+}

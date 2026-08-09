@@ -202,6 +202,16 @@
       {
         "p": {
           "type": "uri",
+          "value": "http://www.w3.org/2000/01/rdf-schema#seeAlso"
+        },
+        "o": {
+          "type": "uri",
+          "value": "http://fr.wikipedia.org/wiki/Camille_Ardouin_%28po%C3%A8te%29"
+        }
+      },
+      {
+        "p": {
+          "type": "uri",
           "value": "http://www.w3.org/2002/07/owl#sameAs"
         },
         "o": {

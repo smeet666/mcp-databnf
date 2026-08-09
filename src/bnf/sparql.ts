@@ -51,6 +51,82 @@ export function escapeLiteral(value: string): string {
 export const literal = (value: string): string => `"${escapeLiteral(value)}"`;
 
 /**
+ * Characters that occupy a position in a string and mark nothing on a screen.
+ *
+ * The control characters other than the whitespace ones, the zero-width spaces
+ * and joiners, the soft hyphen, the bidirectional marks and the byte order
+ * mark. A space, a tab and a line break are absent from the list: they are
+ * visible as a gap and they do separate two words.
+ *
+ * They are written as escapes because they would be invisible in this file as
+ * well, and a character nobody can see in the source of a guard is a guard
+ * nobody can review.
+ */
+const INVISIBLE =
+  /[\u0000-\u0008\u000e-\u001f\u007f-\u009f\u00ad\u061c\u180e\u200b-\u200f\u202a-\u202e\u2060-\u2064\u2066-\u2069\ufeff]/gu;
+
+/**
+ * The text with the characters that mark nothing removed.
+ *
+ * A separator is something a person wrote to hold two words apart. One of these
+ * holds nothing apart, so treating it as a separator turns one word into two
+ * terms the index then requires separately, and a name that matches comes back
+ * as a name the catalogue does not hold.
+ */
+export function withoutInvisibles(input: string): string {
+  return input.replace(INVISIBLE, "");
+}
+
+/** The characters that marked nothing, listed once each, in the order written. */
+export function invisibleCharacters(input: string): string[] {
+  const found: string[] = [];
+  for (const character of input.match(INVISIBLE) ?? []) {
+    if (!found.includes(character)) found.push(character);
+  }
+  return found;
+}
+
+/**
+ * The visible characters a search dropped, listed once each.
+ *
+ * Punctuation reaches no index here, so a caller comparing what they wrote
+ * against what was searched for needs to see which marks were left out. A
+ * space is not one of them: it separates words and is what the words are cut
+ * along.
+ */
+export function charactersSetAside(input: string): string[] {
+  const found: string[] = [];
+  for (const character of withoutInvisibles(input).normalize("NFC")) {
+    if (/[\p{L}\p{N}'\-\s]/u.test(character) || /[‘’ʼ]/u.test(character)) continue;
+    if (!found.includes(character)) found.push(character);
+  }
+  return found;
+}
+
+/** How a piece of caller text became the terms the index was given. */
+export interface SearchReading {
+  /** The words the text was cut into, each one quoted into the query. */
+  words: string[];
+  /** The terms the index requires, after it splits inside a word. */
+  terms: string[];
+  /** The characters that marked nothing and were removed before the cutting. */
+  invisible: string[];
+  /** The visible characters that reached no term. */
+  setAside: string[];
+}
+
+/** Read a piece of caller text the way the query builder and the index will. */
+export function readSearchText(input: string): SearchReading {
+  const words = toSearchWords(input);
+  return {
+    words,
+    terms: toIndexTerms(words),
+    invisible: invisibleCharacters(input),
+    setAside: charactersSetAside(input),
+  };
+}
+
+/**
  * Words a full-text query may carry.
  *
  * The endpoint is a Virtuoso, whose `bif:contains` takes its own miniature
@@ -69,7 +145,7 @@ export const literal = (value: string): string => `"${escapeLiteral(value)}"`;
  * chance that it is a range would break every hyphenated place in France.
  */
 export function toSearchWords(input: string): string[] {
-  const cleaned = input
+  const cleaned = withoutInvisibles(input)
     .normalize("NFC")
     // Anything that is not a letter, a digit, an apostrophe or a hyphen becomes
     // a separator. Typographic apostrophes are folded onto the plain one first,
@@ -88,6 +164,28 @@ export function toSearchWords(input: string): string[] {
     if (words.length >= 12) break;
   }
   return words;
+}
+
+/**
+ * The terms the index will require, read off the words a caller wrote.
+ *
+ * The index tokenises inside a quoted term: an apostrophe and a hyphen are
+ * separators there, so `O'Brien` reaches it as two terms and a record written
+ * `Pat O Brien` carries both and matches. Reporting the word back as one term
+ * would leave a caller checking why a row is on the list with no way of getting
+ * there from the fields shown.
+ *
+ * A piece repeated across words is kept once, since requiring a term twice is
+ * requiring it.
+ */
+export function toIndexTerms(words: readonly string[]): string[] {
+  const terms: string[] = [];
+  for (const word of words) {
+    for (const piece of word.split(/['-]+/u)) {
+      if (piece !== "" && !terms.includes(piece)) terms.push(piece);
+    }
+  }
+  return terms;
 }
 
 /**

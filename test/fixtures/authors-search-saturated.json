@@ -1,0 +1,39 @@
+{
+  "head": {
+    "link": [],
+    "vars": ["person", "name", "label", "birthYear", "deathYear", "role", "windowRows"]
+  },
+  "results": {
+    "distinct": false,
+    "ordered": true,
+    "bindings": [
+      {
+        "person": {
+          "type": "uri",
+          "value": "http://data.bnf.fr/ark:/12148/cb100000031#about"
+        },
+        "name": {
+          "type": "literal",
+          "value": "Marie Aveline"
+        }
+      },
+      {
+        "person": {
+          "type": "uri",
+          "value": "http://data.bnf.fr/ark:/12148/cb100000032#about"
+        },
+        "name": {
+          "type": "literal",
+          "value": "Marie Bonneval"
+        }
+      },
+      {
+        "windowRows": {
+          "type": "typed-literal",
+          "datatype": "http://www.w3.org/2001/XMLSchema#integer",
+          "value": "400"
+        }
+      }
+    ]
+  }
+}
