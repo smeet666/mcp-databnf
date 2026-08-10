@@ -138,7 +138,7 @@ live("data.bnf.fr, live", () => {
     for (const work of works) expect(["established", "provisional"]).toContain(work.status);
     const notes = (payload.notes as string[]).join(" ");
     expect(notes).toContain("not a bibliography");
-    expect(notes).toContain("cannot be narrowed");
+    expect(notes).toContain("never all the works of that form");
     expect(Object.keys(payload)).not.toContain("total");
   });
 
