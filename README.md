@@ -1,17 +1,19 @@
 # mcp-databnf
 
+[![npm](https://img.shields.io/npm/v/mcp-databnf.svg)](https://www.npmjs.com/package/mcp-databnf)
+[![CI](https://github.com/smeet666/mcp-databnf/actions/workflows/ci.yml/badge.svg)](https://github.com/smeet666/mcp-databnf/actions/workflows/ci.yml)
+[![license](https://img.shields.io/npm/l/mcp-databnf.svg)](./LICENSE)
+[![MCP Registry](https://img.shields.io/badge/MCP_Registry-listed-6E56CF)](https://registry.modelcontextprotocol.io/v0/servers?search=io.github.smeet666/mcp-databnf)
+[![Glama](https://glama.ai/mcp/servers/smeet666/mcp-databnf/badges/score.svg)](https://glama.ai/mcp/servers/smeet666/mcp-databnf)
+[![Install in Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/en/install-mcp?name=databnf&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIm1jcC1kYXRhYm5mIl19)
+[![Install in VS Code](https://img.shields.io/badge/VS_Code-Install-0098FF?style=flat&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=databnf&config=%7B%22name%22%3A%22databnf%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22mcp-databnf%22%5D%7D)
+
 An MCP server for [data.bnf.fr](https://data.bnf.fr), the open catalogue of the
 Bibliothèque nationale de France. Look up an author, find a work, list the
 editions the BnF holds of it, list what a person wrote, and gather the links to
 what has been digitised.
 
 No API key. No account. Read-only.
-
-[![npm](https://img.shields.io/npm/v/mcp-databnf)](https://www.npmjs.com/package/mcp-databnf)
-[![CI](https://github.com/smeet666/mcp-databnf/actions/workflows/ci.yml/badge.svg)](https://github.com/smeet666/mcp-databnf/actions/workflows/ci.yml)
-[![licence: MIT](https://img.shields.io/badge/licence-MIT-green.svg)](LICENSE)
-[![MCP Registry](https://img.shields.io/badge/MCP_Registry-listed-6E56CF)](https://registry.modelcontextprotocol.io/v0/servers?search=io.github.smeet666/mcp-databnf)
-[![Glama](https://glama.ai/mcp/servers/smeet666/mcp-databnf/badges/score.svg)](https://glama.ai/mcp/servers/smeet666/mcp-databnf)
 
 ---
 
