@@ -2,6 +2,13 @@
 
 This project follows [semantic versioning](https://semver.org/).
 
+## 1.1.1
+
+- The README carries the same badge row as every server here: npm, CI, the
+  licence, the MCP registry entry, the Glama score, and one-click installs for
+  Cursor and VS Code. Each install link encodes this package. npm serves the
+  README frozen at publish time, so a release is what puts it there.
+
 ## 1.1.0
 
 - A text search reads a fixed window of the index, and a search that filled it
