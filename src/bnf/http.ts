@@ -91,14 +91,20 @@ const MAX_REDIRECTS = 2;
  * Returns null when it says neither, so the caller falls back to its own wait.
  */
 export function parseRetryAfter(value: string | null, now = Date.now()): number | null {
-  if (!value) return null;
+  if (!value) {
+    return null;
+  }
   const trimmed = value.trim();
 
   const seconds = Number(trimmed);
-  if (Number.isFinite(seconds) && seconds >= 0) return Math.round(seconds * 1000);
+  if (Number.isFinite(seconds) && seconds >= 0) {
+    return Math.round(seconds * 1000);
+  }
 
   const at = Date.parse(trimmed);
-  if (Number.isNaN(at)) return null;
+  if (Number.isNaN(at)) {
+    return null;
+  }
   return Math.max(0, at - now);
 }
 
@@ -121,7 +127,9 @@ export function readEngineError(
   body: string,
 ): { kind: "compile" | "runtime"; text: string } | null {
   const match = /^Virtuoso\s+(\w+)\s+Error\s+([\s\S]*)$/.exec(body.trim());
-  if (!match) return null;
+  if (!match) {
+    return null;
+  }
   const state = match[1] ?? "";
   const text = (match[2] ?? "").split("\n")[0]?.trim() ?? "";
   // 37000 is the compiler's own state; the rest come from execution.
@@ -182,6 +190,117 @@ async function postOnce(
   });
 }
 
+/** What a refusal from the endpoint amounts to, and what it costs the pacing. */
+type Refusal =
+  | { kind: "refused"; error: Error; pushBack: boolean }
+  | { kind: "again"; waitMs: number; pushBack: boolean };
+
+/**
+ * Read a status the endpoint answered with, apart from the loop that retries.
+ *
+ * Anything worth another attempt means the service is struggling, so the gap
+ * widens whether or not the status is one that names a delay: a Virtuoso under
+ * load answers 500 as readily as 503. A status the service read the query for
+ * and would not run is not a network failure, and calling it one invites a
+ * retry of something only the query can fix.
+ */
+function readRefusal(
+  response: { status: number; body: string; headers: Headers },
+  attempt: number,
+  maxRetries: number,
+): Refusal {
+  const pushBack = RETRYABLE.has(response.status);
+
+  if (PUSH_BACK.has(response.status)) {
+    const asked = parseRetryAfter(response.headers.get("retry-after"));
+
+    if (asked !== null && asked > LONGEST_WAIT_MS) {
+      return {
+        kind: "refused",
+        pushBack,
+        error: rateLimited(
+          `data.bnf.fr asked this client to wait ${Math.round(asked / 1000)} seconds (HTTP ${response.status}).`,
+          { url: SPARQL_ENDPOINT, status: response.status },
+        ),
+      };
+    }
+    if (attempt >= maxRetries) {
+      return {
+        kind: "refused",
+        pushBack,
+        error: rateLimited(
+          `data.bnf.fr asked this client to slow down (HTTP ${response.status}).`,
+          {
+            url: SPARQL_ENDPOINT,
+            status: response.status,
+          },
+        ),
+      };
+    }
+    return { kind: "again", pushBack, waitMs: asked ?? backoffMs(attempt) };
+  }
+
+  if (RETRYABLE.has(response.status) && attempt < maxRetries) {
+    return { kind: "again", pushBack, waitMs: backoffMs(attempt) };
+  }
+
+  if (response.status === 400 || response.status === 422) {
+    const engine = readEngineError(response.body);
+    return {
+      kind: "refused",
+      pushBack,
+      error: invalidInput(
+        `data.bnf.fr would not run this query${engine?.text ? `: ${engine.text}` : "."}`,
+        "Try fewer or plainer words. If this keeps happening with ordinary input, please report it.",
+      ),
+    };
+  }
+
+  return {
+    kind: "refused",
+    pushBack,
+    error: networkError(`data.bnf.fr answered HTTP ${response.status}.`, {
+      url: SPARQL_ENDPOINT,
+      status: response.status,
+    }),
+  };
+}
+
+/**
+ * What a thrown attempt amounts to, or the error it has become.
+ *
+ * An error this module raised on purpose already says what happened, and is
+ * passed straight on. Silence is given fewer attempts than a refusal: a query
+ * spanning the whole catalogue can take longer than the service will spend on
+ * it, and asking again costs both sides the same wait.
+ */
+function readFailure(
+  error: unknown,
+  attempts: { attempt: number; maxRetries: number; timeoutMs: number },
+): Error {
+  const { attempt, maxRetries, timeoutMs } = attempts;
+
+  if (error instanceof Error && error.name === "BnfError") {
+    throw error;
+  }
+
+  if (error instanceof Error && error.name === "AbortError") {
+    if (attempt >= Math.min(maxRetries, RETRIES_AFTER_SILENCE)) {
+      throw timeoutError(
+        `No answer from data.bnf.fr within ${timeoutMs}ms. A query spanning the whole catalogue can take longer than the service will spend on it.`,
+        { url: SPARQL_ENDPOINT },
+      );
+    }
+    return error;
+  }
+
+  const failure = error instanceof Error ? error : new Error(String(error));
+  if (attempt >= maxRetries) {
+    throw networkError(`Could not reach data.bnf.fr: ${failure.message}`, { url: SPARQL_ENDPOINT });
+  }
+  return failure;
+}
+
 /** Send one query and return the parsed result set. */
 export async function runQuery(options: QueryOptions): Promise<SparqlResults> {
   const { timeoutMs, maxRetries, limiter, logger } = options;
@@ -221,78 +340,19 @@ export async function runQuery(options: QueryOptions): Promise<SparqlResults> {
         return parsed;
       }
 
-      // Anything worth another attempt means the service is struggling, so the
-      // gap widens whether or not the status is one that names a delay. A
-      // Virtuoso under load answers 500 as readily as 503.
-      if (RETRYABLE.has(response.status)) limiter.pushBack();
-
-      if (PUSH_BACK.has(response.status)) {
-        const asked = parseRetryAfter(response.headers.get("retry-after"));
-
-        if (asked !== null && asked > LONGEST_WAIT_MS) {
-          throw rateLimited(
-            `data.bnf.fr asked this client to wait ${Math.round(asked / 1000)} seconds (HTTP ${response.status}).`,
-            { url: SPARQL_ENDPOINT, status: response.status },
-          );
-        }
-        if (attempt >= maxRetries) {
-          throw rateLimited(
-            `data.bnf.fr asked this client to slow down (HTTP ${response.status}).`,
-            {
-              url: SPARQL_ENDPOINT,
-              status: response.status,
-            },
-          );
-        }
-        askedWaitMs = asked ?? backoffMs(attempt);
-        lastError = new Error(`HTTP ${response.status}`);
-        continue;
+      const verdict = readRefusal(response, attempt, maxRetries);
+      if (verdict.pushBack) {
+        limiter.pushBack();
       }
-
-      if (RETRYABLE.has(response.status) && attempt < maxRetries) {
-        lastError = new Error(`HTTP ${response.status}`);
-        askedWaitMs = backoffMs(attempt);
-        continue;
+      if (verdict.kind === "refused") {
+        throw verdict.error;
       }
-
-      // The service read the query and would not run it. Calling that a network
-      // failure invites a retry of something only the query can fix.
-      if (response.status === 400 || response.status === 422) {
-        const engine = readEngineError(response.body);
-        throw invalidInput(
-          `data.bnf.fr would not run this query${engine?.text ? `: ${engine.text}` : "."}`,
-          "Try fewer or plainer words. If this keeps happening with ordinary input, please report it.",
-        );
-      }
-
-      throw networkError(`data.bnf.fr answered HTTP ${response.status}.`, {
-        url: SPARQL_ENDPOINT,
-        status: response.status,
-      });
+      askedWaitMs = verdict.waitMs;
+      lastError = new Error(`HTTP ${response.status}`);
     } catch (error) {
       clearTimeout(deadline);
 
-      // An error this module raised on purpose already says what happened.
-      if (error instanceof Error && error.name === "BnfError") throw error;
-
-      if (error instanceof Error && error.name === "AbortError") {
-        lastError = error;
-        if (attempt >= Math.min(maxRetries, RETRIES_AFTER_SILENCE)) {
-          throw timeoutError(
-            `No answer from data.bnf.fr within ${timeoutMs}ms. A query spanning the whole catalogue can take longer than the service will spend on it.`,
-            { url: SPARQL_ENDPOINT },
-          );
-        }
-        askedWaitMs = backoffMs(attempt);
-        continue;
-      }
-
-      lastError = error instanceof Error ? error : new Error(String(error));
-      if (attempt >= maxRetries) {
-        throw networkError(`Could not reach data.bnf.fr: ${lastError.message}`, {
-          url: SPARQL_ENDPOINT,
-        });
-      }
+      lastError = readFailure(error, { attempt, maxRetries, timeoutMs });
       askedWaitMs = backoffMs(attempt);
     } finally {
       clearTimeout(deadline);

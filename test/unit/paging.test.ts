@@ -92,7 +92,9 @@ async function walk(listing: Listing, limit: number): Promise<string[]> {
       const result = await listing.run(bnf, limit, page);
       expect(result.isError).toBeUndefined();
       seen.push(...idsOf(result, listing.key));
-      if (payloadOf(result).has_more !== true) return seen;
+      if (payloadOf(result).has_more !== true) {
+        return seen;
+      }
     }
     throw new Error(`${listing.name} never reported the end of the listing`);
   })();

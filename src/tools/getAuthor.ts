@@ -23,6 +23,75 @@ import {
   toToolError,
 } from "./shared.js";
 import type { ToolResult } from "./shared.js";
+import type { AuthorDetail } from "../types.js";
+
+/**
+ * What the catalogue's own shape says about the record, beyond its fields.
+ *
+ * Each sentence answers something a reader would otherwise conclude wrongly: a
+ * field that holds an occupation rather than a life, one statement written
+ * twice, dates that disagree with the heading they sit under, and a silence
+ * about a death that means different things depending on whether the record
+ * dates the person at all.
+ */
+function notesOnWhatTheRecordStates(data: AuthorDetail, args: GetAuthorArgs): string[] {
+  const notes: string[] = [];
+
+  if (data.biographicalInformation !== null) {
+    notes.push(
+      `The BnF states "${data.biographicalInformation}" as this person's biographical information. That field holds an occupation rather than a life, and this is all the catalogue says.`,
+    );
+  }
+  // Two fields carrying one string are one statement. Read as two they
+  // corroborate each other, and a reader counts a second source that the
+  // record does not hold.
+  if (data.biographicalInformation !== null && data.biographicalInformation === data.occupation) {
+    notes.push(
+      "This record states the same text under 'biographical_information' and 'occupation', character for character. It is one statement written in two fields rather than two the record makes separately.",
+    );
+  }
+  // A record can carry its dates twice, in the brackets of a heading and in
+  // the fields, and the two can disagree. The fields are what the searches
+  // read and what a caller compares to tell two people of one name apart, so
+  // the disagreement is stated: nothing on the record says which side a
+  // cataloguer meant, and choosing one would settle a date the BnF has not.
+  const headings = [data.label, ...data.otherNames.map((other) => other.label)];
+  const conflicts = [
+    ...new Set(
+      headings.flatMap((heading) => headingYearConflicts(heading, data.birthYear, data.deathYear)),
+    ),
+  ];
+  if (conflicts.length > 0) {
+    notes.push(
+      `This record states its dates twice and the two disagree: the heading says ${conflicts.join(", and ")}. Both are passed on as the BnF publishes them, and the record says nothing about which is right, so read source_url before citing either.`,
+    );
+  }
+
+  // What the silence about a death is worth depends on whether the record
+  // dates the person at all. A record carrying a birth places them in time
+  // and leaves one statement missing; a record carrying neither places them
+  // nowhere, and reading a life out of it is reading a life out of a heading.
+  if (data.deathDate === null && data.deathYear === null) {
+    const dated = data.birthDate !== null || data.birthYear !== null;
+    notes.push(
+      dated
+        ? "The record states no date of death. That can mean the person is living, or that the BnF has not recorded one; the catalogue does not distinguish the two."
+        : `This record states no date of birth and no date of death, so it dates the person nowhere and says nothing about whether they are living. ${SEVERAL_RECORDS_CAVEAT}`,
+    );
+  }
+  if (Object.keys(data.sameAs).length > 0) {
+    notes.push(
+      `${ALIGNMENTS_CAVEAT} Following one is how to reach a biography, which this catalogue does not hold.`,
+    );
+  }
+  // The caveat is about links a caller is holding. On an answer that returns
+  // none, it describes a list that is not there and reads as a list withheld.
+  if (args.include_depictions && data.depictions.length > 0) {
+    notes.push(GALLICA_CAVEAT);
+  }
+
+  return notes;
+}
 
 export const getAuthorDescription = [
   "Read one person's record in the Bibliothèque nationale de France authority file, by the identifier search_authors returns.",
@@ -109,60 +178,11 @@ export async function runGetAuthor(client: BnfClient, args: GetAuthorArgs): Prom
     const { data, cached, retrievedAt } = await client.getAuthor(id);
 
     const notes: string[] = [];
-    if (cached) notes.push("Served from this server's short-lived in-memory cache.");
-
-    if (data.biographicalInformation !== null) {
-      notes.push(
-        `The BnF states "${data.biographicalInformation}" as this person's biographical information. That field holds an occupation rather than a life, and this is all the catalogue says.`,
-      );
-    }
-    // Two fields carrying one string are one statement. Read as two they
-    // corroborate each other, and a reader counts a second source that the
-    // record does not hold.
-    if (data.biographicalInformation !== null && data.biographicalInformation === data.occupation) {
-      notes.push(
-        "This record states the same text under 'biographical_information' and 'occupation', character for character. It is one statement written in two fields rather than two the record makes separately.",
-      );
-    }
-    // A record can carry its dates twice, in the brackets of a heading and in
-    // the fields, and the two can disagree. The fields are what the searches
-    // read and what a caller compares to tell two people of one name apart, so
-    // the disagreement is stated: nothing on the record says which side a
-    // cataloguer meant, and choosing one would settle a date the BnF has not.
-    const headings = [data.label, ...data.otherNames.map((other) => other.label)];
-    const conflicts = [
-      ...new Set(
-        headings.flatMap((heading) =>
-          headingYearConflicts(heading, data.birthYear, data.deathYear),
-        ),
-      ),
-    ];
-    if (conflicts.length > 0) {
-      notes.push(
-        `This record states its dates twice and the two disagree: the heading says ${conflicts.join(", and ")}. Both are passed on as the BnF publishes them, and the record says nothing about which is right, so read source_url before citing either.`,
-      );
+    if (cached) {
+      notes.push("Served from this server's short-lived in-memory cache.");
     }
 
-    // What the silence about a death is worth depends on whether the record
-    // dates the person at all. A record carrying a birth places them in time
-    // and leaves one statement missing; a record carrying neither places them
-    // nowhere, and reading a life out of it is reading a life out of a heading.
-    if (data.deathDate === null && data.deathYear === null) {
-      const dated = data.birthDate !== null || data.birthYear !== null;
-      notes.push(
-        dated
-          ? "The record states no date of death. That can mean the person is living, or that the BnF has not recorded one; the catalogue does not distinguish the two."
-          : `This record states no date of birth and no date of death, so it dates the person nowhere and says nothing about whether they are living. ${SEVERAL_RECORDS_CAVEAT}`,
-      );
-    }
-    if (Object.keys(data.sameAs).length > 0) {
-      notes.push(
-        `${ALIGNMENTS_CAVEAT} Following one is how to reach a biography, which this catalogue does not hold.`,
-      );
-    }
-    // The caveat is about links a caller is holding. On an answer that returns
-    // none, it describes a list that is not there and reads as a list withheld.
-    if (args.include_depictions && data.depictions.length > 0) notes.push(GALLICA_CAVEAT);
+    notes.push(...notesOnWhatTheRecordStates(data, args));
 
     const structured: Record<string, unknown> = {
       author: {
@@ -207,13 +227,13 @@ export async function runGetAuthor(client: BnfClient, args: GetAuthorArgs): Prom
     }
 
     const born = [
-      data.birthDate ?? (data.birthYear !== null ? String(data.birthYear) : null),
+      data.birthDate ?? (data.birthYear === null ? null : String(data.birthYear)),
       data.birthPlace,
     ]
       .filter(Boolean)
       .join(", ");
     const died = [
-      data.deathDate ?? (data.deathYear !== null ? String(data.deathYear) : null),
+      data.deathDate ?? (data.deathYear === null ? null : String(data.deathYear)),
       data.deathPlace,
     ]
       .filter(Boolean)

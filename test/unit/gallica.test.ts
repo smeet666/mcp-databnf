@@ -135,7 +135,9 @@ describe("every tool, driven with records full of Gallica addresses", () => {
 
     // The links are there, in full, for a person to open.
     expect(links.length).toBeGreaterThan(0);
-    for (const link of links) expect(isGallicaAddress(link.url)).toBe(true);
+    for (const link of links) {
+      expect(isGallicaAddress(link.url)).toBe(true);
+    }
     // And nothing was asked of that host.
     expect(endpoint.urls().every((url) => new URL(url).hostname === ALLOWED_HOST)).toBe(true);
   });
@@ -188,8 +190,11 @@ describe("the source tree", () => {
     const walk = (directory: string) => {
       for (const entry of readdirSync(directory, { withFileTypes: true })) {
         const path = join(directory, entry.name);
-        if (entry.isDirectory()) walk(path);
-        else if (entry.name.endsWith(".ts")) files.push(path);
+        if (entry.isDirectory()) {
+          walk(path);
+        } else if (entry.name.endsWith(".ts")) {
+          files.push(path);
+        }
       }
     };
     walk(new URL("../../src", import.meta.url).pathname);

@@ -52,7 +52,7 @@ export function assertRequestable(url: string): void {
   if (host !== ALLOWED_HOST) {
     throw refusal(
       `mcp-databnf requests ${ALLOWED_HOST} and nothing else; "${host}" was refused. ` +
-        `Gallica in particular is described from the catalogue and never read.`,
+        "Gallica in particular is described from the catalogue and never read.",
     );
   }
 }

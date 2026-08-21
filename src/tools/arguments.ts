@@ -48,10 +48,14 @@ function unknownArgumentMessage(keys: readonly string[], declared: readonly stri
 function nearestArgument(key: string, declared: readonly string[]): string | undefined {
   const flatten = (name: string) => name.toLowerCase().replace(/[^a-z0-9]/g, "");
   const flat = flatten(key);
-  if (flat.length === 0) return undefined;
+  if (flat.length === 0) {
+    return undefined;
+  }
 
   const sameName = declared.find((name) => flatten(name) === flat);
-  if (sameName) return sameName;
+  if (sameName) {
+    return sameName;
+  }
 
   // Either name may be the longer one: a caller can qualify a name this tool
   // keeps plain, or shorten one it spells out.
@@ -61,7 +65,9 @@ function nearestArgument(key: string, declared: readonly string[]): string | und
     // Two characters in common say nothing; three start to.
     return shorter.length >= 3 && (longer.startsWith(shorter) || longer.endsWith(shorter));
   });
-  if (overlapping) return overlapping;
+  if (overlapping) {
+    return overlapping;
+  }
 
   let closest: string | undefined;
   let shortest = Number.POSITIVE_INFINITY;

@@ -315,6 +315,8 @@ describe("the query list_works sends", () => {
     const endpoint = fakeEndpoint([{ fixture: "author-works" }]);
     await runListWorks(client(endpoint), { author_id: ARDOUIN, limit: 10, page: 1 });
 
-    for (const url of endpoint.urls()) expect(url).toBe("https://data.bnf.fr/sparql");
+    for (const url of endpoint.urls()) {
+      expect(url).toBe("https://data.bnf.fr/sparql");
+    }
   });
 });

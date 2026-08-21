@@ -86,7 +86,9 @@ live("data.bnf.fr, live", () => {
 
     expect(works.length).toBeGreaterThan(0);
     expect((payload.notes as string[]).join(" ")).toContain("does not score");
-    for (const work of works) expect(["established", "provisional"]).toContain(work.status);
+    for (const work of works) {
+      expect(["established", "provisional"]).toContain(work.status);
+    }
   });
 
   it("get_work tells an established record from a provisional one", async () => {
@@ -113,7 +115,9 @@ live("data.bnf.fr, live", () => {
     expect(editions.some((edition) => edition.publisher !== null)).toBe(true);
     const links = editions.flatMap((edition) => edition.digitised);
     expect(links.length).toBeGreaterThan(0);
-    for (const link of links) expect(link.url).toContain("gallica.bnf.fr");
+    for (const link of links) {
+      expect(link.url).toContain("gallica.bnf.fr");
+    }
   });
 
   it("find_digitised gathers links for a person and reports what they are", async () => {
@@ -124,7 +128,9 @@ live("data.bnf.fr, live", () => {
     expect(payload.kind).toBe("person");
     const links = payload.links as Array<{ url: string; role: string }>;
     expect(links.length).toBeGreaterThan(0);
-    for (const link of links) expect(link.url).toContain("gallica.bnf.fr");
+    for (const link of links) {
+      expect(link.url).toContain("gallica.bnf.fr");
+    }
     expect((payload.notes as string[]).join(" ")).toContain("never requests gallica.bnf.fr");
   });
 
@@ -135,7 +141,9 @@ live("data.bnf.fr, live", () => {
     const works = payload.works as Array<{ id: string; status: string; forms: string[] }>;
 
     expect(works.length).toBeGreaterThan(0);
-    for (const work of works) expect(["established", "provisional"]).toContain(work.status);
+    for (const work of works) {
+      expect(["established", "provisional"]).toContain(work.status);
+    }
     const notes = (payload.notes as string[]).join(" ");
     expect(notes).toContain("not a bibliography");
     expect(notes).toContain("never all the works of that form");

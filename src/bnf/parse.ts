@@ -80,14 +80,18 @@ const ALIGNMENT_HOSTS: Array<{ host: string; name: string }> = [
 ];
 
 const text = (term: SparqlTerm | undefined): string | null => {
-  if (!term) return null;
+  if (!term) {
+    return null;
+  }
   const value = term.value.trim();
   return value === "" ? null : value;
 };
 
 const integer = (term: SparqlTerm | undefined): number | null => {
   const raw = text(term);
-  if (raw === null) return null;
+  if (raw === null) {
+    return null;
+  }
   const value = Number(raw);
   return Number.isInteger(value) ? value : null;
 };
@@ -95,9 +99,13 @@ const integer = (term: SparqlTerm | undefined): number | null => {
 /** The identifier a caller quotes, read back off the address of a record. */
 export function idFromIri(iri: string): string | null {
   const ark = /ark:\/12148\/(c[bc][0-9a-z]+)/i.exec(iri);
-  if (ark?.[1]) return ark[1].toLowerCase();
+  if (ark?.[1]) {
+    return ark[1].toLowerCase();
+  }
   const temp = /temp-work\/([0-9a-f]{32})/i.exec(iri);
-  if (temp?.[1]) return `temp-work/${temp[1].toLowerCase()}`;
+  if (temp?.[1]) {
+    return `temp-work/${temp[1].toLowerCase()}`;
+  }
   return null;
 }
 
@@ -118,16 +126,22 @@ export function toDigitisedLink(
   fromId: string,
   fromTitle: string | null,
 ): DigitisedLink | null {
-  if (!address || !isGallicaAddress(address)) return null;
+  if (!address || !isGallicaAddress(address)) {
+    return null;
+  }
   const segment = /ark:\/12148\/([^/?#]+)/.exec(address)?.[1] ?? null;
-  if (!segment) return null;
+  if (!segment) {
+    return null;
+  }
   // An address can carry a rendering after the name: `.thumbnail` asks for a
   // small image of the document, `.item` for one leaf of it. An ARK name holds
   // no full stop, so what precedes the first one is the identifier and the rest
   // describes a view of it. Reporting the view as the identifier would give two
   // views of one document two identifiers.
   const ark = segment.split(".")[0] ?? segment;
-  if (ark === "") return null;
+  if (ark === "") {
+    return null;
+  }
   return { ark, url: address, rendering: renderingOf(address, ark), role, fromId, fromTitle };
 }
 
@@ -174,9 +188,13 @@ function page<T>(rows: T[], limit: number, skipped: number): Page<T> {
 function readWindowOccupancy(results: SparqlResults): boolean | null {
   for (const row of results.results.bindings) {
     const raw = text(row.windowRows);
-    if (raw === null) continue;
+    if (raw === null) {
+      continue;
+    }
     const count = Number(raw);
-    if (Number.isInteger(count)) return count >= TEXT_WINDOW;
+    if (Number.isInteger(count)) {
+      return count >= TEXT_WINDOW;
+    }
   }
   return null;
 }
@@ -196,10 +214,15 @@ export function byPredicate(results: SparqlResults): Map<string, SparqlRow[]> {
   const index = new Map<string, SparqlRow[]>();
   for (const row of results.results.bindings) {
     const predicate = text(row.p);
-    if (predicate === null) continue;
+    if (predicate === null) {
+      continue;
+    }
     const bucket = index.get(predicate);
-    if (bucket) bucket.push(row);
-    else index.set(predicate, [row]);
+    if (bucket) {
+      bucket.push(row);
+    } else {
+      index.set(predicate, [row]);
+    }
   }
   return index;
 }
@@ -211,7 +234,9 @@ const allValues = (index: Map<string, SparqlRow[]>, predicate: string): string[]
   const seen = new Set<string>();
   for (const row of index.get(predicate) ?? []) {
     const value = text(row.o);
-    if (value !== null) seen.add(value);
+    if (value !== null) {
+      seen.add(value);
+    }
   }
   return [...seen];
 };
@@ -255,10 +280,14 @@ function alignments(
   const found: Record<string, Set<string>> = {};
   for (const predicate of [P.sameAs, P.exactMatch, P.closeMatch, P.seeAlso]) {
     for (const address of allValues(index, predicate)) {
-      if (!address.startsWith("http")) continue;
+      if (!address.startsWith("http")) {
+        continue;
+      }
       // An address pointing back at this record says nothing about anywhere
       // else, and the dataset carries several of those per record.
-      if (selfId && address.includes(selfId)) continue;
+      if (selfId && address.includes(selfId)) {
+        continue;
+      }
       let host: string;
       try {
         host = new URL(address).hostname.toLowerCase();
@@ -268,7 +297,9 @@ function alignments(
       const known = ALIGNMENT_HOSTS.find(
         (entry) => host === entry.host || host.endsWith(`.${entry.host}`),
       );
-      if (!known) continue;
+      if (!known) {
+        continue;
+      }
       const addresses = found[known.name] ?? new Set<string>();
       found[known.name] = addresses;
       addresses.add(address);
@@ -291,7 +322,9 @@ export function toAuthorSummaries(results: SparqlResults, limit: number): Page<A
   let skipped = 0;
 
   for (const row of results.results.bindings) {
-    if (isOccupancyRow(row, "person")) continue;
+    if (isOccupancyRow(row, "person")) {
+      continue;
+    }
     const iri = text(row.person);
     const id = iri === null ? null : idFromIri(iri);
     if (iri === null || id === null) {
@@ -301,7 +334,9 @@ export function toAuthorSummaries(results: SparqlResults, limit: number): Page<A
       skipped += 1;
       continue;
     }
-    if (seen.has(id)) continue;
+    if (seen.has(id)) {
+      continue;
+    }
     seen.add(id);
     rows.push({
       id,
@@ -326,14 +361,18 @@ export function toAuthorDetail(results: SparqlResults, id: string, pageUrl: stri
   const seenLabels = new Set<string>();
   for (const row of index.get(P.altLabel) ?? []) {
     const label = text(row.o);
-    if (label === null || seenLabels.has(label)) continue;
+    if (label === null || seenLabels.has(label)) {
+      continue;
+    }
     seenLabels.add(label);
     otherNames.push({ label, language: text(row.lang) });
   }
 
   const sameAs = alignments(index, id);
   const isni = isniAddresses(index);
-  if (isni.length > 0) sameAs.isni = [...new Set([...(sameAs.isni ?? []), ...isni])];
+  if (isni.length > 0) {
+    sameAs.isni = [...new Set([...(sameAs.isni ?? []), ...isni])];
+  }
 
   const catalogueUrl =
     allValues(index, P.seeAlso).find((address) => address.includes("catalogue.bnf.fr")) ?? null;
@@ -341,7 +380,9 @@ export function toAuthorDetail(results: SparqlResults, id: string, pageUrl: stri
   const depictions: DigitisedLink[] = [];
   for (const address of allValues(index, P.depiction)) {
     const link = toDigitisedLink(address, "depiction", id, null);
-    if (link) depictions.push(link);
+    if (link) {
+      depictions.push(link);
+    }
   }
 
   return {
@@ -385,8 +426,12 @@ export function toAuthorDetail(results: SparqlResults, id: string, pageUrl: stri
 export function readStatus(statement: string | null, iri: string): "established" | "provisional" {
   if (statement !== null) {
     const said = statement.toLowerCase();
-    if (said.includes("provisional")) return "provisional";
-    if (said.includes("established")) return "established";
+    if (said.includes("provisional")) {
+      return "provisional";
+    }
+    if (said.includes("established")) {
+      return "established";
+    }
   }
   return iri.includes("/temp-work/") ? "provisional" : "established";
 }
@@ -398,7 +443,9 @@ export function toWorkSummaries(results: SparqlResults, limit: number): Page<Wor
 
   let skipped = 0;
   for (const row of results.results.bindings) {
-    if (isOccupancyRow(row, "work")) continue;
+    if (isOccupancyRow(row, "work")) {
+      continue;
+    }
     const iri = text(row.work);
     const id = iri === null ? null : idFromIri(iri);
     if (iri === null || id === null) {
@@ -479,9 +526,11 @@ export function toAuthoredWorks(results: SparqlResults, limit: number): Page<Aut
     }
 
     const form = text(row.form);
-    if (form !== null && form.startsWith("http")) {
+    if (form?.startsWith("http")) {
       const term = vocabularyTerm(form);
-      if (!work.forms.includes(term)) work.forms.push(term);
+      if (!work.forms.includes(term)) {
+        work.forms.push(term);
+      }
     }
   }
 
@@ -507,14 +556,18 @@ export function toWorkDetail(
   for (const row of index.get(P.creator) ?? []) {
     const creatorIri = text(row.o);
     const creatorId = creatorIri ? idFromIri(creatorIri) : null;
-    if (!creatorId || creators.some((c) => c.id === creatorId)) continue;
+    if (!creatorId || creators.some((c) => c.id === creatorId)) {
+      continue;
+    }
     creators.push({ id: creatorId, name: text(row.name) });
   }
 
   const depictions: DigitisedLink[] = [];
   for (const address of allValues(index, P.depiction)) {
     const link = toDigitisedLink(address, "depiction", id, null);
-    if (link) depictions.push(link);
+    if (link) {
+      depictions.push(link);
+    }
   }
 
   const statusStatement = firstValue(index, P.statusOfIdentification);
@@ -634,7 +687,9 @@ export function toDigitisedLinks(results: SparqlResults, limit: number): Page<Di
       ["depiction", "depiction"],
     ] as const) {
       const link = toDigitisedLink(text(row[column]), role, fromId, title);
-      if (!link || seen.has(link.url)) continue;
+      if (!link || seen.has(link.url)) {
+        continue;
+      }
       seen.add(link.url);
       links.push(link);
     }
@@ -652,7 +707,9 @@ export function toTypes(results: SparqlResults): string[] {
   const types = new Set<string>();
   for (const row of results.results.bindings) {
     const iri = text(row.type);
-    if (iri !== null) types.add(iri);
+    if (iri !== null) {
+      types.add(iri);
+    }
   }
   return [...types];
 }

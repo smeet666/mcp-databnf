@@ -177,7 +177,9 @@ export async function runSearchWorks(
     const windowFull = data.indexWindowFull ?? null;
 
     const notes: string[] = [];
-    if (cached) notes.push("Served from this server's short-lived in-memory cache.");
+    if (cached) {
+      notes.push("Served from this server's short-lived in-memory cache.");
+    }
 
     // What bounds the answer is said before what qualifies it. The text block
     // fits a limited trailer and drops the last notes to keep the credit, and a
@@ -185,7 +187,9 @@ export async function runSearchWorks(
     // them.
     if (windowFull) {
       notes.push(WINDOW_FULL_CAVEAT);
-      if (!data.hasMore) notes.push(WINDOW_FULL_AND_NO_MORE);
+      if (!data.hasMore) {
+        notes.push(WINDOW_FULL_AND_NO_MORE);
+      }
     }
 
     // A caller checking why a row is on the list reads the terms, so the ones
@@ -208,8 +212,12 @@ export async function runSearchWorks(
       source_url: row.sourceUrl,
     }));
 
-    if (works.length > 0) notes.push(NO_RANKING);
-    if (works.some((work) => work.status === "provisional")) notes.push(PROVISIONAL_CAVEAT);
+    if (works.length > 0) {
+      notes.push(NO_RANKING);
+    }
+    if (works.some((work) => work.status === "provisional")) {
+      notes.push(PROVISIONAL_CAVEAT);
+    }
 
     // Writing a title out in full narrows the search rather than sharpening it.
     // "Une saison en enfer" requires "une" and "en" to appear as well, so a

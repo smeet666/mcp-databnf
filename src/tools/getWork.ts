@@ -25,6 +25,60 @@ import {
   toToolError,
 } from "./shared.js";
 import type { ToolResult } from "./shared.js";
+import type { WorkDetail } from "../types.js";
+
+/**
+ * What the catalogue's own shape says about the work, beyond its fields.
+ *
+ * A provisional record, a form stated as a code the catalogue publishes no
+ * label for, an alignment that reaches a description this catalogue does not
+ * hold: each is something a reader would otherwise take for more than it is.
+ */
+function notesOnWhatTheRecordStates(data: WorkDetail, args: GetWorkArgs): string[] {
+  const notes: string[] = [];
+
+  if (data.status === "provisional") {
+    notes.push(
+      `This is a provisional record, addressed under 'temp-work' rather than by an ARK${data.statusStatement ? ` and stated as "${data.statusStatement}"` : ""}. ${PROVISIONAL_CAVEAT}`,
+    );
+  } else {
+    notes.push(
+      `This is an established work record, addressed by the ARK '${data.id}'${data.statusStatement ? ` and stated as "${data.statusStatement}"` : ""}. That identifier is the one to cite.`,
+    );
+  }
+
+  if (data.truncated) {
+    notes.push(
+      "This record is longer than one query reads, so parts of it are missing from this answer. A field shown as empty here may be filled on the record itself: open source_url before concluding that the BnF states nothing.",
+    );
+  }
+  if (data.expressionCount !== null && data.expressionCount > 0) {
+    notes.push(
+      `The record links ${data.expressionCount} expression(s): translations, adaptations and recordings of this work. Published editions are a separate count, and list_editions is what reads them.`,
+    );
+  }
+  // The codes are printed in the body and in the payload, so what they are
+  // travels with them: a reader shown 'poesi' beside 'te' has no way of
+  // telling a word from an opaque term without being told.
+  if (data.forms.length > 0) {
+    notes.push(FORMS_CAVEAT);
+  }
+  if (data.creators.length === 0) {
+    notes.push(
+      "The record credits nobody with this work. That is normal for anonymous and traditional works, and it also happens on records a cataloguer has not finished.",
+    );
+  }
+  if (Object.keys(data.sameAs).length > 0) {
+    notes.push(ALIGNMENTS_CAVEAT);
+  }
+  // The caveat is about links a caller is holding. On an answer that returns
+  // none, it describes a list that is not there and reads as a list withheld.
+  if (args.include_depictions && data.depictions.length > 0) {
+    notes.push(GALLICA_CAVEAT);
+  }
+
+  return notes;
+}
 
 export const getWorkDescription = [
   "Read one work's record in the Bibliothèque nationale de France catalogue, by the identifier search_works returns.",
@@ -106,41 +160,11 @@ export async function runGetWork(client: BnfClient, args: GetWorkArgs): Promise<
     const { data, cached, retrievedAt } = await client.getWork(id);
 
     const notes: string[] = [];
-    if (cached) notes.push("Served from this server's short-lived in-memory cache.");
-
-    if (data.status === "provisional") {
-      notes.push(
-        `This is a provisional record, addressed under 'temp-work' rather than by an ARK${data.statusStatement ? ` and stated as "${data.statusStatement}"` : ""}. ${PROVISIONAL_CAVEAT}`,
-      );
-    } else {
-      notes.push(
-        `This is an established work record, addressed by the ARK '${data.id}'${data.statusStatement ? ` and stated as "${data.statusStatement}"` : ""}. That identifier is the one to cite.`,
-      );
+    if (cached) {
+      notes.push("Served from this server's short-lived in-memory cache.");
     }
 
-    if (data.truncated) {
-      notes.push(
-        "This record is longer than one query reads, so parts of it are missing from this answer. A field shown as empty here may be filled on the record itself: open source_url before concluding that the BnF states nothing.",
-      );
-    }
-    if (data.expressionCount !== null && data.expressionCount > 0) {
-      notes.push(
-        `The record links ${data.expressionCount} expression(s): translations, adaptations and recordings of this work. Published editions are a separate count, and list_editions is what reads them.`,
-      );
-    }
-    // The codes are printed in the body and in the payload, so what they are
-    // travels with them: a reader shown 'poesi' beside 'te' has no way of
-    // telling a word from an opaque term without being told.
-    if (data.forms.length > 0) notes.push(FORMS_CAVEAT);
-    if (data.creators.length === 0) {
-      notes.push(
-        "The record credits nobody with this work. That is normal for anonymous and traditional works, and it also happens on records a cataloguer has not finished.",
-      );
-    }
-    if (Object.keys(data.sameAs).length > 0) notes.push(ALIGNMENTS_CAVEAT);
-    // The caveat is about links a caller is holding. On an answer that returns
-    // none, it describes a list that is not there and reads as a list withheld.
-    if (args.include_depictions && data.depictions.length > 0) notes.push(GALLICA_CAVEAT);
+    notes.push(...notesOnWhatTheRecordStates(data, args));
 
     const structured: Record<string, unknown> = {
       work: {

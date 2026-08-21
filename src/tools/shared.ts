@@ -129,7 +129,9 @@ export function ok(
   // body has been made safe, so a note is the one way third-party text could
   // otherwise reach the block already looking like a line this server wrote.
   const noteLines = (options.notes ?? []).map((note) => `Note: ${onOneLine(note)}`);
-  while (noteLines.length > 0 && noteLines.join("\n").length > MAX_TEXT_CHARS / 2) noteLines.pop();
+  while (noteLines.length > 0 && noteLines.join("\n").length > MAX_TEXT_CHARS / 2) {
+    noteLines.pop();
+  }
   const trailer = [...noteLines, credit].join("\n");
 
   const cut = "\n\n[shortened; the full result is in the structured output]";
@@ -156,12 +158,16 @@ export function toToolError(error: unknown): ToolResult {
   // A failure message can carry text from the endpoint and identifiers a caller
   // wrote, so it is guarded like any other body.
   const lines = [`[${known.code}] ${onOneLine(known.message)}`];
-  if (known.details.hint) lines.push(`Hint: ${onOneLine(known.details.hint)}`);
+  if (known.details.hint) {
+    lines.push(`Hint: ${onOneLine(known.details.hint)}`);
+  }
   return { content: [{ type: "text", text: lines.join("\n") }], isError: true };
 }
 
 export function truncate(text: string, maxChars: number): string {
-  if (text.length <= maxChars) return text;
+  if (text.length <= maxChars) {
+    return text;
+  }
   return `${text.slice(0, Math.max(0, maxChars - 1)).trimEnd()}…`;
 }
 
@@ -269,7 +275,9 @@ export async function classifyEmptyPage(
   page: number,
   firstPageHasRow: () => Promise<boolean>,
 ): Promise<EmptyPage> {
-  if (page === 1) return "absent";
+  if (page === 1) {
+    return "absent";
+  }
   try {
     return (await firstPageHasRow()) ? "past_the_end" : "absent";
   } catch {
@@ -296,8 +304,12 @@ export const WORK_TYPES: readonly string[] = [
  * is returned for everything else, which the caller refuses by name.
  */
 export function recordKindOf(types: readonly string[]): "person" | "work" | null {
-  if (types.includes(PERSON_TYPE)) return "person";
-  if (types.some((type) => WORK_TYPES.includes(type))) return "work";
+  if (types.includes(PERSON_TYPE)) {
+    return "person";
+  }
+  if (types.some((type) => WORK_TYPES.includes(type))) {
+    return "work";
+  }
   return null;
 }
 
@@ -325,7 +337,9 @@ export function headingYearConflicts(
   birthYear: number | null,
   deathYear: number | null,
 ): string[] {
-  if (label === null) return [];
+  if (label === null) {
+    return [];
+  }
   const stated = headingYears(label);
   const conflicts: string[] = [];
   if (stated.birth !== null && birthYear !== null && stated.birth !== birthYear) {
