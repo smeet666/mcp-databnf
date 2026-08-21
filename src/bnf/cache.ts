@@ -37,7 +37,9 @@ export class Cache<T> {
 
   get(key: string): Hit<T> | undefined {
     const entry = this.entries.get(key);
-    if (!entry) return undefined;
+    if (!entry) {
+      return undefined;
+    }
     if (entry.expiresAt <= Date.now()) {
       this.entries.delete(key);
       return undefined;
@@ -52,12 +54,16 @@ export class Cache<T> {
   set(key: string, value: T, retrievedAt: number): void {
     // A lifetime of zero turns the store off rather than expiring at once:
     // nothing is written, so nothing has to be checked on the way out.
-    if (this.ttlMs <= 0) return;
+    if (this.ttlMs <= 0) {
+      return;
+    }
     this.entries.delete(key);
     this.entries.set(key, { value, expiresAt: Date.now() + this.ttlMs, retrievedAt });
     while (this.entries.size > this.maxEntries) {
       const oldest = this.entries.keys().next();
-      if (oldest.done) break;
+      if (oldest.done) {
+        break;
+      }
       this.entries.delete(oldest.value);
     }
   }

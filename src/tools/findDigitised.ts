@@ -28,6 +28,54 @@ import {
   toToolError,
 } from "./shared.js";
 import type { ToolResult } from "./shared.js";
+import type { EntityId } from "../bnf/sparql.js";
+
+/**
+ * Whether the catalogue describes a person or a work at this address.
+ *
+ * The path a person is followed by and the path a work is followed by reach
+ * different links, so the wrong one answers with part of the record or with
+ * none of it. The name is only worth reading if the catalogue is what settled
+ * it, so the type is read here whatever the caller wrote.
+ */
+async function whichKindTheCatalogueDescribes(
+  client: BnfClient,
+  id: EntityId,
+): Promise<{ kind: "person" | "work" } | { error: ToolResult }> {
+  // Only a work is addressed under temp-work, so the address settles it.
+  if (id.kind === "temp-work") {
+    return { kind: "work" };
+  }
+
+  const types = await client.types(id);
+  if (types.data.length === 0) {
+    return {
+      error: toToolError(
+        notFound(`data.bnf.fr describes nothing at "${id.id}".`, {
+          hint: "Find the identifier with search_authors or search_works rather than writing one.",
+          url: id.pageUrl,
+        }),
+      ),
+    };
+  }
+
+  const found = recordKindOf(types.data);
+  if (found === null) {
+    return {
+      error: toToolError(
+        notFound(
+          `"${id.id}" is described by data.bnf.fr, and it is neither a person nor a work: it is typed ${types.data.join(", ")}.`,
+          {
+            hint: "This tool follows a person or a work. For one edition, list_editions carries the digitised copies alongside the imprint.",
+            url: id.pageUrl,
+          },
+        ),
+      ),
+    };
+  }
+
+  return { kind: found };
+}
 
 export const findDigitisedDescription = [
   "Gather the digitised documents the Bibliothèque nationale de France catalogue attaches to one person or one work, and return them as links.",
@@ -83,39 +131,11 @@ export async function runFindDigitised(
 
     const notes: string[] = [];
 
-    // The path a person is followed by and the path a work is followed by
-    // reach different links, so the wrong one answers with part of the record
-    // or with none of it. The answer names the kind it followed, and that name
-    // is only worth reading if the catalogue is what settled it, so the type is
-    // read here whatever the caller wrote.
-    let kind: "person" | "work";
-    if (id.kind === "temp-work") {
-      // Only a work is addressed under temp-work, so the address settles it.
-      kind = "work";
-    } else {
-      const types = await client.types(id);
-      if (types.data.length === 0) {
-        return toToolError(
-          notFound(`data.bnf.fr describes nothing at "${id.id}".`, {
-            hint: "Find the identifier with search_authors or search_works rather than writing one.",
-            url: id.pageUrl,
-          }),
-        );
-      }
-      const found = recordKindOf(types.data);
-      if (found === null) {
-        return toToolError(
-          notFound(
-            `"${id.id}" is described by data.bnf.fr, and it is neither a person nor a work: it is typed ${types.data.join(", ")}.`,
-            {
-              hint: "This tool follows a person or a work. For one edition, list_editions carries the digitised copies alongside the imprint.",
-              url: id.pageUrl,
-            },
-          ),
-        );
-      }
-      kind = found;
+    const settled = await whichKindTheCatalogueDescribes(client, id);
+    if ("error" in settled) {
+      return settled.error;
     }
+    const kind = settled.kind;
 
     if (args.kind !== "auto" && args.kind !== kind) {
       return toToolError(
@@ -131,7 +151,9 @@ export async function runFindDigitised(
         ? await client.digitisedForPerson(id, args.limit)
         : await client.digitisedForWork(id, args.limit);
 
-    if (cached) notes.push("Served from this server's short-lived in-memory cache.");
+    if (cached) {
+      notes.push("Served from this server's short-lived in-memory cache.");
+    }
 
     const links = data.rows.map((link) => ({
       ark: link.ark,
@@ -150,7 +172,9 @@ export async function runFindDigitised(
 
     const rendered = links.filter((link) => link.rendering !== null);
 
-    if (links.length > 0) notes.push(GALLICA_CAVEAT);
+    if (links.length > 0) {
+      notes.push(GALLICA_CAVEAT);
+    }
     if (counts.depiction > 0) {
       notes.push(
         `${counts.depiction === 1 ? "One of these is an image" : `${counts.depiction} of these are images`} the catalogue uses to illustrate the record. Such an image can be a portrait, a title page, or a newspaper page that mentions the subject in passing, and the catalogue does not say which.`,

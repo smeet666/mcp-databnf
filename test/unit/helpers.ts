@@ -22,6 +22,17 @@ import { loadConfig } from "../../src/config.js";
 const here = dirname(fileURLToPath(import.meta.url));
 const fixtureDir = join(here, "..", "fixtures");
 
+/** The address a fetch was called with, whichever of the three shapes it took. */
+function addressOf(input: string | URL | Request): string {
+  if (typeof input === "string") {
+    return input;
+  }
+  if (input instanceof URL) {
+    return input.href;
+  }
+  return String(input);
+}
+
 export function fixture(name: string): unknown {
   return JSON.parse(readFileSync(join(fixtureDir, `${name}.json`), "utf8"));
 }
@@ -67,8 +78,7 @@ export function fakeEndpoint(replies: Reply[]): FakeEndpoint {
   let index = 0;
 
   const fetchImpl = (async (input: string | URL | Request, init?: RequestInit) => {
-    const url =
-      typeof input === "string" ? input : input instanceof URL ? input.href : String(input);
+    const url = addressOf(input);
     const body = typeof init?.body === "string" ? init.body : "";
     const headers = Object.fromEntries(
       Object.entries((init?.headers ?? {}) as Record<string, string>).map(([key, value]) => [
@@ -89,7 +99,9 @@ export function fakeEndpoint(replies: Reply[]): FakeEndpoint {
     };
     index += 1;
 
-    if ("throws" in reply) throw reply.throws;
+    if ("throws" in reply) {
+      throw reply.throws;
+    }
 
     if ("fixture" in reply) {
       return new Response(fixtureText(reply.fixture), {
@@ -145,8 +157,7 @@ export function catalogueEndpoint(entityIris: readonly string[]): CatalogueEndpo
   const sorted = [...entityIris].sort();
 
   const fetchImpl = (async (input: string | URL | Request, init?: RequestInit) => {
-    const url =
-      typeof input === "string" ? input : input instanceof URL ? input.href : String(input);
+    const url = addressOf(input);
     const body = typeof init?.body === "string" ? init.body : "";
     const query = new URLSearchParams(body).get("query") ?? "";
     requests.push({
@@ -199,7 +210,9 @@ function outerIsOrdered(query: string): boolean {
  */
 function answer(sorted: readonly string[], query: string): unknown {
   const paging = PAGING_SUBQUERY.exec(query);
-  if (!paging) return { head: { vars: [] }, results: { bindings: [] } };
+  if (!paging) {
+    return { head: { vars: [] }, results: { bindings: [] } };
+  }
 
   const [, variable = "entity", limitText = "0", offsetText = "0"] = paging;
   const take = Number(limitText);
@@ -212,7 +225,7 @@ function answer(sorted: readonly string[], query: string): unknown {
     [arranged[last - 1], arranged[last]] = [arranged[last]!, arranged[last - 1]!];
   }
 
-  const bindings: Array<Record<string, { type: string; value: string }>> = [];
+  const bindings: Record<string, { type: string; value: string }>[] = [];
   for (const iri of arranged) {
     const row = {
       [variable]: { type: "uri", value: iri },

@@ -92,7 +92,7 @@ describe("find_digitised", () => {
 
   it("says which addresses ask for a rendering rather than the document", async () => {
     const result = await digitisedForPerson();
-    const links = payloadOf(result).links as Array<Record<string, unknown>>;
+    const links = payloadOf(result).links as Record<string, unknown>[];
 
     const document = links.find(
       (link) => link.url === "https://gallica.bnf.fr/ark:/12148/bpt6k90000030",
@@ -188,7 +188,7 @@ describe("list_editions", () => {
     expect(notes).toContain("Square brackets");
     expect(notes).toContain("[s.n.]");
 
-    const editions = payloadOf(result).editions as Array<Record<string, unknown>>;
+    const editions = payloadOf(result).editions as Record<string, unknown>[];
     const undated = editions.find((edition) => edition.id === "cb100000032");
     expect(undated!.publisher).toBe("[s.n.]");
     expect(undated!.place).toBe("[S.l.]");

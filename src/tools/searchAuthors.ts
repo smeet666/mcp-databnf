@@ -103,9 +103,15 @@ const SPELLING_CAVEAT =
  * year says one thing: when the person was born.
  */
 function lifespan(birthYear: number | null, deathYear: number | null): string {
-  if (birthYear !== null && deathYear !== null) return ` (${birthYear}–${deathYear})`;
-  if (birthYear !== null) return ` (born ${birthYear})`;
-  if (deathYear !== null) return ` (died ${deathYear})`;
+  if (birthYear !== null && deathYear !== null) {
+    return ` (${birthYear}–${deathYear})`;
+  }
+  if (birthYear !== null) {
+    return ` (born ${birthYear})`;
+  }
+  if (deathYear !== null) {
+    return ` (died ${deathYear})`;
+  }
   return "";
 }
 
@@ -194,7 +200,9 @@ export async function runSearchAuthors(
     const windowFull = data.indexWindowFull ?? null;
 
     const notes: string[] = [];
-    if (cached) notes.push("Served from this server's short-lived in-memory cache.");
+    if (cached) {
+      notes.push("Served from this server's short-lived in-memory cache.");
+    }
 
     // What bounds the answer is said before what qualifies it. The text block
     // fits a limited trailer and drops the last notes to keep the credit, and a
@@ -202,7 +210,9 @@ export async function runSearchAuthors(
     // them.
     if (windowFull) {
       notes.push(WINDOW_FULL_CAVEAT);
-      if (!data.hasMore) notes.push(WINDOW_FULL_AND_NO_MORE);
+      if (!data.hasMore) {
+        notes.push(WINDOW_FULL_AND_NO_MORE);
+      }
     }
 
     // A caller checking why a row is on the list reads the terms, so the ones
@@ -226,7 +236,9 @@ export async function runSearchAuthors(
       source_url: row.sourceUrl,
     }));
 
-    if (authors.length > 0) notes.push(NO_RANKING);
+    if (authors.length > 0) {
+      notes.push(NO_RANKING);
+    }
 
     // The index compares the characters it was given against the characters a
     // cataloguer entered. A name the BnF holds under a transliteration of its
@@ -250,7 +262,9 @@ export async function runSearchAuthors(
     const repeated = new Map<string, number>();
     for (const author of authors) {
       const key = (author.name ?? "").toLocaleLowerCase("fr");
-      if (key !== "") repeated.set(key, (repeated.get(key) ?? 0) + 1);
+      if (key !== "") {
+        repeated.set(key, (repeated.get(key) ?? 0) + 1);
+      }
     }
     const shared = [...repeated.entries()].filter(([, count]) => count > 1);
     if (shared.length > 0) {

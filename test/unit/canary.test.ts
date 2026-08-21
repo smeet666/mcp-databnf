@@ -51,7 +51,9 @@ function notePhrasesRequiredBy(source: string): string[] {
   const found = new Set<string>();
   for (const match of source.matchAll(NOTE_ASSERTION)) {
     const phrase = match[2];
-    if (phrase !== undefined && phrase !== "") found.add(phrase);
+    if (phrase !== undefined && phrase !== "") {
+      found.add(phrase);
+    }
   }
   return [...found];
 }

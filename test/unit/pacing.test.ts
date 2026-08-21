@@ -85,7 +85,9 @@ describe("one request at a time, spaced out", () => {
 
   it("never widens past its ceiling", () => {
     const limiter = new RateLimiter({ intervalMs: 3000, maxIntervalMs: 9000 });
-    for (let n = 0; n < 10; n += 1) limiter.pushBack();
+    for (let n = 0; n < 10; n += 1) {
+      limiter.pushBack();
+    }
     expect(limiter.currentIntervalMs).toBe(9000);
   });
 

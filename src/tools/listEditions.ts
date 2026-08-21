@@ -23,6 +23,20 @@ import {
 } from "./shared.js";
 import type { ToolResult } from "./shared.js";
 
+/**
+ * Why a page of editions came back empty.
+ *
+ * A page past the last one and a work the catalogue links no edition to are
+ * different statements about the catalogue, and a caller cannot act on the
+ * first the way they would act on the second.
+ */
+function nothingOnThisPage(page: number, work: string): string {
+  if (page > 1) {
+    return `Page ${page} of the editions of "${work}" holds no row.`;
+  }
+  return `The BnF catalogue links no edition to the work "${work}".`;
+}
+
 export const listEditionsDescription = [
   "List the published editions of one work in the Bibliothèque nationale de France catalogue, by the identifier search_works or get_work returns.",
   "Each row carries the publisher, the place, the year, the edition statement, the extent in the words of the record, the ISBN when there is one, and the record in the BnF general catalogue.",
@@ -94,7 +108,9 @@ export async function runListEditions(
     const { data, cached, retrievedAt } = await client.listEditions(id, args.limit, offset);
 
     const notes: string[] = [];
-    if (cached) notes.push("Served from this server's short-lived in-memory cache.");
+    if (cached) {
+      notes.push("Served from this server's short-lived in-memory cache.");
+    }
 
     const editions = data.rows.map((row) => ({
       id: row.id,
@@ -120,7 +136,9 @@ export async function runListEditions(
     }));
 
     const digitisedCount = editions.filter((edition) => edition.digitised.length > 0).length;
-    if (digitisedCount > 0) notes.push(GALLICA_CAVEAT);
+    if (digitisedCount > 0) {
+      notes.push(GALLICA_CAVEAT);
+    }
 
     // A bracketed value is a cataloguing convention, and a caller building a
     // citation out of one copies the cataloguer's aside into it as if the item
@@ -162,9 +180,7 @@ export async function runListEditions(
 
     const body =
       editions.length === 0
-        ? args.page > 1
-          ? `Page ${args.page} of the editions of "${id.id}" holds no row.`
-          : `The BnF catalogue links no edition to the work "${id.id}".`
+        ? nothingOnThisPage(args.page, id.id)
         : `${editions.length} edition(s) of "${id.id}":\n${editions
             .map((edition, index) => {
               const imprint = [edition.place, edition.publisher, edition.date]
@@ -207,7 +223,9 @@ export async function runListEditions(
 async function assertWork(client: BnfClient, id: EntityId): Promise<void> {
   // Only a work is addressed under temp-work, so the address settles it and no
   // query is spent.
-  if (id.kind === "temp-work") return;
+  if (id.kind === "temp-work") {
+    return;
+  }
 
   const types = await client.types(id);
   if (types.data.length === 0) {

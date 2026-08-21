@@ -44,16 +44,569 @@
     "rules": {
       "preset": "recommended",
       "a11y": "off",
-      "suspicious": {
-        "noControlCharactersInRegex": "off",
-        "noExplicitAny": "error"
-      },
-      "style": {
-        "noNonNullAssertion": "error",
-        "useImportType": {
+      "complexity": {
+        "noAdjacentSpacesInRegex": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "noArguments": "error",
+        "noBannedTypes": "error",
+        "noCommaOperator": "error",
+        "noEmptyTypeParameters": "error",
+        "noExcessiveCognitiveComplexity": {
+          "level": "error",
+          "options": {
+            "maxAllowedComplexity": 25
+          }
+        },
+        "noExcessiveLinesPerFunction": {
+          "level": "error",
+          "options": {
+            "maxLines": 400
+          }
+        },
+        "noExcessiveNestedTestSuites": "error",
+        "noExtraBooleanCast": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "noFlatMapIdentity": {
+          "level": "error",
+          "fix": "unsafe"
+        },
+        "noStaticOnlyClass": "error",
+        "noThisInStatic": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "noUselessCatch": {
+          "level": "error",
+          "fix": "unsafe"
+        },
+        "noUselessCatchBinding": {
+          "level": "error",
+          "fix": "unsafe"
+        },
+        "noUselessConstructor": {
+          "level": "error",
+          "fix": "unsafe"
+        },
+        "noUselessContinue": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "noUselessEmptyExport": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "noUselessEscapeInRegex": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "noUselessFragments": {
+          "level": "error",
+          "fix": "unsafe"
+        },
+        "noUselessLabel": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "noUselessLoneBlockStatements": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "noUselessRename": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "noUselessReturn": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "noUselessStringConcat": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "noUselessStringRaw": "error",
+        "noUselessSwitchCase": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "noUselessTernary": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "noUselessThisAlias": {
+          "level": "error",
+          "fix": "unsafe"
+        },
+        "noUselessTypeConstraint": {
+          "level": "error",
+          "fix": "unsafe"
+        },
+        "noUselessUndefinedInitialization": {
+          "level": "error",
+          "fix": "unsafe"
+        },
+        "useArrayFind": "error",
+        "useArrowFunction": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "useDateNow": {
+          "level": "error",
+          "fix": "unsafe"
+        },
+        "useFlatMap": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "useIndexOf": {
+          "level": "error",
+          "fix": "unsafe"
+        },
+        "useLiteralKeys": {
+          "level": "error",
+          "fix": "unsafe"
+        },
+        "useMaxParams": {
+          "level": "error",
+          "options": {
+            "max": 10
+          }
+        },
+        "useNumericLiterals": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "useOptionalChain": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "useRegexLiterals": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "useSimpleNumberKeys": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "useWhile": {
           "level": "error",
           "fix": "safe"
         }
+      },
+      "correctness": {
+        "noConstAssign": {
+          "level": "error",
+          "fix": "unsafe"
+        },
+        "noConstantCondition": "error",
+        "noConstantMathMinMaxClamp": "error",
+        "noConstructorReturn": "error",
+        "noEmptyCharacterClassInRegex": "error",
+        "noEmptyPattern": "error",
+        "noGlobalObjectCalls": "error",
+        "noInnerDeclarations": "error",
+        "noInvalidBuiltinInstantiation": {
+          "level": "error",
+          "fix": "unsafe"
+        },
+        "noInvalidConstructorSuper": "error",
+        "noInvalidUseBeforeDeclaration": "error",
+        "noNonoctalDecimalEscape": "error",
+        "noPrecisionLoss": "error",
+        "noPrivateImports": "error",
+        "noSelfAssign": "error",
+        "noSetterReturn": "error",
+        "noStringCaseMismatch": {
+          "level": "error",
+          "fix": "unsafe"
+        },
+        "noSwitchDeclarations": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "noUndeclaredVariables": "error",
+        "noUnreachable": "error",
+        "noUnreachableSuper": "error",
+        "noUnsafeFinally": "error",
+        "noUnsafeOptionalChaining": "error",
+        "noUnusedFunctionParameters": {
+          "level": "error",
+          "fix": "unsafe"
+        },
+        "noUnusedImports": {
+          "level": "error",
+          "fix": "unsafe"
+        },
+        "noUnusedLabels": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "noUnusedPrivateClassMembers": {
+          "level": "error",
+          "fix": "unsafe"
+        },
+        "noUnusedVariables": {
+          "level": "error",
+          "fix": "unsafe",
+          "options": {
+            "ignoreRestSiblings": true
+          }
+        },
+        "noVoidElementsWithChildren": {
+          "level": "error",
+          "fix": "unsafe"
+        },
+        "noVoidTypeReturn": "error",
+        "useIsNan": {
+          "level": "error",
+          "fix": "unsafe"
+        },
+        "useParseIntRadix": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "useValidForDirection": "error",
+        "useValidTypeof": {
+          "level": "error",
+          "fix": "unsafe"
+        },
+        "useYield": "error"
+      },
+      "nursery": {
+        "noFloatingPromises": "error",
+        "noIdenticalTestTitle": "error",
+        "noImpliedEval": "error",
+        "noMisusedPromises": "error",
+        "noUnnecessaryTemplateExpression": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "noUnsafePlusOperands": "error",
+        "useArraySome": {
+          "level": "error",
+          "fix": "unsafe"
+        },
+        "useMathMinMax": {
+          "level": "error",
+          "fix": "unsafe"
+        },
+        "useStringStartsEndsWith": {
+          "level": "error",
+          "fix": "unsafe"
+        }
+      },
+      "performance": {
+        "noAccumulatingSpread": "error",
+        "noDelete": {
+          "level": "error",
+          "fix": "unsafe"
+        },
+        "noDynamicNamespaceImportAccess": "error",
+        "noReExportAll": "error"
+      },
+      "security": {
+        "noBlankTarget": "error",
+        "noGlobalEval": "error",
+        "noScriptUrl": "error"
+      },
+      "style": {
+        "noDoneCallback": "error",
+        "noImplicitBoolean": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "noMultiAssign": "error",
+        "noNamespace": "error",
+        "noNegationElse": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "noNestedTernary": "error",
+        "noNonNullAssertion": "error",
+        "noParameterAssign": {
+          "level": "error",
+          "options": {
+            "propertyAssignment": "allow"
+          }
+        },
+        "noRestrictedGlobals": {
+          "level": "error",
+          "options": {
+            "deniedGlobals": {}
+          }
+        },
+        "noRestrictedImports": "error",
+        "noRestrictedTypes": "error",
+        "noSubstr": {
+          "level": "error",
+          "fix": "unsafe"
+        },
+        "noUnusedTemplateLiteral": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "noUselessElse": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "noYodaExpression": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "useArrayLiterals": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "useAsConstAssertion": "error",
+        "useAtIndex": {
+          "level": "error",
+          "fix": "unsafe"
+        },
+        "useBlockStatements": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "useCollapsedElseIf": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "useCollapsedIf": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "useConsistentArrayType": {
+          "level": "error",
+          "fix": "unsafe",
+          "options": {
+            "syntax": "shorthand"
+          }
+        },
+        "useConsistentArrowReturn": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "useConsistentBuiltinInstantiation": {
+          "level": "error",
+          "fix": "unsafe"
+        },
+        "useConsistentCurlyBraces": {
+          "level": "error",
+          "fix": "unsafe"
+        },
+        "useConst": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "useDefaultParameterLast": "error",
+        "useEnumInitializers": "error",
+        "useExponentiationOperator": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "useExportType": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "useForOf": "error",
+        "useGroupedAccessorPairs": "error",
+        "useImportType": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "useLiteralEnumMembers": "error",
+        "useNodeAssertStrict": "error",
+        "useNodejsImportProtocol": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "useNumberNamespace": "error",
+        "useObjectSpread": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "useSelfClosingElements": "error",
+        "useShorthandAssign": {
+          "level": "error",
+          "fix": "unsafe"
+        },
+        "useShorthandFunctionType": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "useSingleVarDeclarator": "error",
+        "useSpreadOverApply": {
+          "level": "error",
+          "fix": "unsafe"
+        },
+        "useTemplate": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "useThrowNewError": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "useThrowOnlyError": "error",
+        "useTrimStartEnd": "error"
+      },
+      "suspicious": {
+        "noApproximativeNumericConstant": {
+          "level": "error",
+          "fix": "unsafe"
+        },
+        "noArrayIndexKey": "error",
+        "noAssignInExpressions": "error",
+        "noAsyncPromiseExecutor": "error",
+        "noCatchAssign": "error",
+        "noClassAssign": "error",
+        "noCompareNegZero": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "noConfusingLabels": "error",
+        "noConfusingVoidType": {
+          "level": "error",
+          "fix": "unsafe"
+        },
+        "noConstEnum": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "noConstantBinaryExpressions": "error",
+        "noControlCharactersInRegex": "off",
+        "noDebugger": {
+          "level": "error",
+          "fix": "unsafe"
+        },
+        "noDocumentCookie": "error",
+        "noDoubleEquals": {
+          "level": "error",
+          "fix": "unsafe",
+          "options": {
+            "ignoreNull": false
+          }
+        },
+        "noDuplicateCase": "error",
+        "noDuplicateClassMembers": "error",
+        "noDuplicateDependencies": "error",
+        "noDuplicateElseIf": "error",
+        "noDuplicateEnumValues": "error",
+        "noDuplicateObjectKeys": "error",
+        "noDuplicateParameters": "error",
+        "noDuplicateTestHooks": "error",
+        "noEmptyInterface": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "noEmptySource": {
+          "level": "error",
+          "options": {
+            "allowComments": true
+          }
+        },
+        "noExplicitAny": "error",
+        "noExportsInTest": "error",
+        "noExtraNonNullAssertion": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "noFallthroughSwitchClause": "error",
+        "noFocusedTests": {
+          "level": "error",
+          "fix": "unsafe"
+        },
+        "noFunctionAssign": "error",
+        "noGlobalAssign": "error",
+        "noGlobalIsFinite": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "noGlobalIsNan": {
+          "level": "error",
+          "fix": "unsafe"
+        },
+        "noImplicitAnyLet": "error",
+        "noImportAssign": "error",
+        "noImportCycles": "error",
+        "noIrregularWhitespace": "error",
+        "noLabelVar": "error",
+        "noMisleadingCharacterClass": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "noMisleadingInstantiator": "error",
+        "noMisplacedAssertion": "off",
+        "noMisrefactoredShorthandAssign": {
+          "level": "error",
+          "fix": "unsafe"
+        },
+        "noNestedPromises": "error",
+        "noNonNullAssertedOptionalChain": "error",
+        "noOctalEscape": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "noProto": "error",
+        "noPrototypeBuiltins": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "noRedeclare": "error",
+        "noRedundantUseStrict": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "noSelfCompare": "error",
+        "noShadowRestrictedNames": "error",
+        "noSparseArray": {
+          "level": "error",
+          "fix": "unsafe"
+        },
+        "noSuspiciousSemicolonInJsx": "error",
+        "noTemplateCurlyInString": "error",
+        "noThenProperty": "error",
+        "noTsIgnore": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "noUnassignedVariables": "error",
+        "noUnsafeDeclarationMerging": "error",
+        "noUnsafeNegation": {
+          "level": "error",
+          "fix": "unsafe"
+        },
+        "noUnusedExpressions": "error",
+        "noUselessEscapeInString": "error",
+        "noUselessRegexBackrefs": "error",
+        "noVar": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "noWith": "error",
+        "useAdjacentOverloadSignatures": "error",
+        "useAwait": "error",
+        "useDefaultSwitchClauseLast": "error",
+        "useErrorMessage": "error",
+        "useGetterReturn": "error",
+        "useGoogleFontDisplay": "error",
+        "useGuardForIn": "error",
+        "useIsArray": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "useIterableCallbackReturn": "error",
+        "useNamespaceKeyword": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "useNumberToFixedDigitsArgument": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "noConsole": "off"
       }
     }
   },
@@ -73,13 +626,16 @@
       "linter": {
         "rules": {
           "complexity": {
+            "noExcessiveLinesPerFunction": "off",
             "useLiteralKeys": "off"
           },
           "style": {
             "noNonNullAssertion": "off"
           },
           "suspicious": {
-            "noExplicitAny": "off"
+            "noExplicitAny": "off",
+            "noUnusedExpressions": "off",
+            "useAwait": "off"
           }
         }
       }

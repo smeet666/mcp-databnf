@@ -58,7 +58,9 @@ export class RateLimiter {
     // Capped at one whole interval, so a clock that moved backwards cannot
     // produce a wait longer than the spacing itself.
     const wait = Math.min(this.intervalMs, this.intervalMs - elapsed);
-    if (wait > 0) await sleep(wait);
+    if (wait > 0) {
+      await sleep(wait);
+    }
     this.lastStartedAt = Date.now();
   }
 
@@ -73,9 +75,13 @@ export class RateLimiter {
    * response after a rough patch does not undo the caution that earned it.
    */
   succeeded(): void {
-    if (this.intervalMs === this.baseIntervalMs) return;
+    if (this.intervalMs === this.baseIntervalMs) {
+      return;
+    }
     this.calmStreak += 1;
-    if (this.calmStreak < 3) return;
+    if (this.calmStreak < 3) {
+      return;
+    }
     this.calmStreak = 0;
     this.intervalMs = Math.max(this.baseIntervalMs, Math.round(this.intervalMs / 2));
   }

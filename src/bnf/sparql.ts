@@ -81,7 +81,9 @@ export function withoutInvisibles(input: string): string {
 export function invisibleCharacters(input: string): string[] {
   const found: string[] = [];
   for (const character of input.match(INVISIBLE) ?? []) {
-    if (!found.includes(character)) found.push(character);
+    if (!found.includes(character)) {
+      found.push(character);
+    }
   }
   return found;
 }
@@ -97,8 +99,12 @@ export function invisibleCharacters(input: string): string[] {
 export function charactersSetAside(input: string): string[] {
   const found: string[] = [];
   for (const character of withoutInvisibles(input).normalize("NFC")) {
-    if (/[\p{L}\p{N}'\-\s]/u.test(character) || /[‘’ʼ]/u.test(character)) continue;
-    if (!found.includes(character)) found.push(character);
+    if (/[\p{L}\p{N}'\-\s]/u.test(character) || /[‘’ʼ]/u.test(character)) {
+      continue;
+    }
+    if (!found.includes(character)) {
+      found.push(character);
+    }
   }
   return found;
 }
@@ -157,11 +163,15 @@ export function toSearchWords(input: string): string[] {
   for (const raw of cleaned.split(" ")) {
     // Trim the joiners at the edges: they only mean something between letters.
     const word = raw.replace(/^['-]+/u, "").replace(/['-]+$/u, "");
-    if (word === "") continue;
+    if (word === "") {
+      continue;
+    }
     // A word this long is a paste rather than a word, and the index will not
     // match it anyway.
     words.push(word.length > 60 ? word.slice(0, 60) : word);
-    if (words.length >= 12) break;
+    if (words.length >= 12) {
+      break;
+    }
   }
   return words;
 }
@@ -182,7 +192,9 @@ export function toIndexTerms(words: readonly string[]): string[] {
   const terms: string[] = [];
   for (const word of words) {
     for (const piece of word.split(/['-]+/u)) {
-      if (piece !== "" && !terms.includes(piece)) terms.push(piece);
+      if (piece !== "" && !terms.includes(piece)) {
+        terms.push(piece);
+      }
     }
   }
   return terms;

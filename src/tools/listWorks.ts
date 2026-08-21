@@ -144,7 +144,9 @@ export async function runListWorks(client: BnfClient, args: ListWorksArgs): Prom
     const { data, cached, retrievedAt } = await client.worksByAuthor(id, args.limit, offset);
 
     const notes: string[] = [];
-    if (cached) notes.push("Served from this server's short-lived in-memory cache.");
+    if (cached) {
+      notes.push("Served from this server's short-lived in-memory cache.");
+    }
 
     const works = data.rows.map((row) => ({
       id: row.id,
@@ -179,7 +181,9 @@ export async function runListWorks(client: BnfClient, args: ListWorksArgs): Prom
       // describes nowhere all answer with no rows, and reporting any of them as
       // a person credited with nothing states a fact about a life the catalogue
       // never described.
-      if (emptiness === "absent") await assertPerson(client, id);
+      if (emptiness === "absent") {
+        await assertPerson(client, id);
+      }
       notes.push(emptyPageNote(emptiness, args.page, id.id));
     } else {
       if (data.hasMore) {
@@ -188,7 +192,9 @@ export async function runListWorks(client: BnfClient, args: ListWorksArgs): Prom
         );
       }
       notes.push(`${FORMS_CAVEAT} ${FORMS_FILTER_CAVEAT}`);
-      if (works.some((work) => work.status === "provisional")) notes.push(PROVISIONAL_CAVEAT);
+      if (works.some((work) => work.status === "provisional")) {
+        notes.push(PROVISIONAL_CAVEAT);
+      }
       notes.push(ORDER_CAVEAT, DATE_CAVEAT);
     }
 
