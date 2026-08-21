@@ -1,7 +1,14 @@
 {
   "head": {
     "link": [],
-    "vars": ["rank", "edition", "title", "reproduction", "ocr", "depiction"]
+    "vars": [
+      "rank",
+      "edition",
+      "title",
+      "reproduction",
+      "ocr",
+      "depiction"
+    ]
   },
   "results": {
     "distinct": false,

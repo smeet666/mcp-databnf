@@ -77,19 +77,37 @@ function nearestArgument(key: string, declared: readonly string[]): string | und
   return shortest <= Math.max(1, Math.floor(flat.length / 3)) ? closest : undefined;
 }
 
-/** Single-character insertions, deletions and substitutions between two words. */
+/**
+ * Single-character insertions, deletions and substitutions between two words.
+ *
+ * One row of the matrix is kept at a time. The cell above comes from walking
+ * that row, and the two other neighbours a cell needs, the one to its left and
+ * the one diagonally above it, are carried forward from the step before, so
+ * every value the walk uses is one it has just computed.
+ */
 function editDistance(left: string, right: string): number {
-  let previous: number[] = Array.from({ length: right.length + 1 }, (_, index) => index);
+  let previous = Array.from({ length: right.length + 1 }, (_, index) => index);
+  let distance = right.length;
 
   for (let row = 1; row <= left.length; row += 1) {
     const current: number[] = [row];
-    for (let column = 1; column <= right.length; column += 1) {
-      // Every index here is inside a row this loop has already filled.
-      const substitution = previous[column - 1]! + (left[row - 1] === right[column - 1] ? 0 : 1);
-      current[column] = Math.min(substitution, previous[column]! + 1, current[column - 1]! + 1);
+    let diagonal = row - 1;
+    let leftward = row;
+
+    for (const [column, above] of previous.entries()) {
+      if (column === 0) {
+        continue;
+      }
+      const substitution = diagonal + (left[row - 1] === right[column - 1] ? 0 : 1);
+      const cell = Math.min(substitution, above + 1, leftward + 1);
+      current.push(cell);
+      diagonal = above;
+      leftward = cell;
     }
+
     previous = current;
+    distance = leftward;
   }
 
-  return previous[right.length]!;
+  return distance;
 }

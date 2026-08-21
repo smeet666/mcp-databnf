@@ -1,7 +1,15 @@
 {
   "head": {
     "link": [],
-    "vars": ["person", "name", "label", "birthYear", "deathYear", "role", "windowRows"]
+    "vars": [
+      "person",
+      "name",
+      "label",
+      "birthYear",
+      "deathYear",
+      "role",
+      "windowRows"
+    ]
   },
   "results": {
     "distinct": false,

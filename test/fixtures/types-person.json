@@ -1,7 +1,9 @@
 {
   "head": {
     "link": [],
-    "vars": ["type"]
+    "vars": [
+      "type"
+    ]
   },
   "results": {
     "distinct": false,

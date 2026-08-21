@@ -6,6 +6,21 @@ on:
   pull_request:
 
 jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # A formatting or lint verdict does not depend on the version of node. In
+      # the matrix the same complaint would be reported twice, labelled with a
+      # version that has nothing to do with it. No `needs` either: a formatting
+      # nit must never hide a failing test, so both jobs start at once.
+      - run: npm run check
+
   test:
     runs-on: ubuntu-latest
     strategy:

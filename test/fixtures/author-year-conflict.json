@@ -1,7 +1,11 @@
 {
   "head": {
     "link": [],
-    "vars": ["p", "o", "lang"]
+    "vars": [
+      "p",
+      "o",
+      "lang"
+    ]
   },
   "results": {
     "distinct": false,

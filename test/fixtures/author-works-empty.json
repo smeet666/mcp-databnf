@@ -1,7 +1,14 @@
 {
   "head": {
     "link": [],
-    "vars": ["work", "title", "date", "year", "status", "form"]
+    "vars": [
+      "work",
+      "title",
+      "date",
+      "year",
+      "status",
+      "form"
+    ]
   },
   "results": {
     "distinct": false,

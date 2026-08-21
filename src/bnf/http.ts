@@ -294,7 +294,6 @@ export async function runQuery(options: QueryOptions): Promise<SparqlResults> {
         });
       }
       askedWaitMs = backoffMs(attempt);
-      continue;
     } finally {
       clearTimeout(deadline);
     }

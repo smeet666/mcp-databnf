@@ -269,7 +269,9 @@ function alignments(
         (entry) => host === entry.host || host.endsWith(`.${entry.host}`),
       );
       if (!known) continue;
-      (found[known.name] ??= new Set()).add(address);
+      const addresses = found[known.name] ?? new Set<string>();
+      found[known.name] = addresses;
+      addresses.add(address);
     }
   }
   return Object.fromEntries(Object.entries(found).map(([name, set]) => [name, [...set]]));
@@ -430,7 +432,7 @@ export function toWorkSummaries(results: SparqlResults, limit: number): Page<Wor
 
   return {
     ...page(
-      order.map((id) => byId.get(id)!),
+      order.map((id) => byId.get(id)).filter((one) => one !== undefined),
       limit,
       skipped,
     ),
@@ -484,7 +486,7 @@ export function toAuthoredWorks(results: SparqlResults, limit: number): Page<Aut
   }
 
   return page(
-    order.map((id) => byId.get(id)!),
+    order.map((id) => byId.get(id)).filter((one) => one !== undefined),
     limit,
     skipped,
   );
@@ -601,7 +603,7 @@ export function toEditions(results: SparqlResults, limit: number): Page<Edition>
   }
 
   return page(
-    order.map((id) => byId.get(id)!),
+    order.map((id) => byId.get(id)).filter((one) => one !== undefined),
     limit,
     skipped,
   );

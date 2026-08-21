@@ -33,9 +33,7 @@
     "entry_point": "server/index.js",
     "mcp_config": {
       "command": "node",
-      "args": [
-        "${__dirname}/server/index.js"
-      ]
+      "args": ["${__dirname}/server/index.js"]
     }
   },
   "tools": [
@@ -65,11 +63,7 @@
     }
   ],
   "compatibility": {
-    "platforms": [
-      "darwin",
-      "win32",
-      "linux"
-    ],
+    "platforms": ["darwin", "win32", "linux"],
     "runtimes": {
       "node": ">=20.0.0"
     }
