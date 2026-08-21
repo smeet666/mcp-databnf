@@ -1,7 +1,11 @@
 {
   "head": {
     "link": [],
-    "vars": ["person", "name", "windowRows"]
+    "vars": [
+      "person",
+      "name",
+      "windowRows"
+    ]
   },
   "results": {
     "distinct": false,

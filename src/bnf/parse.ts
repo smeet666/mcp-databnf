@@ -269,7 +269,9 @@ function alignments(
         (entry) => host === entry.host || host.endsWith(`.${entry.host}`),
       );
       if (!known) continue;
-      (found[known.name] ??= new Set()).add(address);
+      const addresses = found[known.name] ?? new Set<string>();
+      found[known.name] = addresses;
+      addresses.add(address);
     }
   }
   return Object.fromEntries(Object.entries(found).map(([name, set]) => [name, [...set]]));

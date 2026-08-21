@@ -1,7 +1,15 @@
 {
   "head": {
     "link": [],
-    "vars": ["work", "title", "date", "status", "creator", "creatorName", "windowRows"]
+    "vars": [
+      "work",
+      "title",
+      "date",
+      "status",
+      "creator",
+      "creatorName",
+      "windowRows"
+    ]
   },
   "results": {
     "distinct": false,

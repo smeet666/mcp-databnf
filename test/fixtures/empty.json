@@ -1,7 +1,9 @@
 {
   "head": {
     "link": [],
-    "vars": ["person"]
+    "vars": [
+      "person"
+    ]
   },
   "results": {
     "distinct": false,

@@ -1,7 +1,16 @@
 {
   "head": {
     "link": [],
-    "vars": ["edition", "title", "date", "year", "publisher", "place", "extent", "catalogue"]
+    "vars": [
+      "edition",
+      "title",
+      "date",
+      "year",
+      "publisher",
+      "place",
+      "extent",
+      "catalogue"
+    ]
   },
   "results": {
     "distinct": false,
