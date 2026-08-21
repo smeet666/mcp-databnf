@@ -432,7 +432,7 @@ export function toWorkSummaries(results: SparqlResults, limit: number): Page<Wor
 
   return {
     ...page(
-      order.map((id) => byId.get(id)!),
+      order.map((id) => byId.get(id)).filter((one) => one !== undefined),
       limit,
       skipped,
     ),
@@ -486,7 +486,7 @@ export function toAuthoredWorks(results: SparqlResults, limit: number): Page<Aut
   }
 
   return page(
-    order.map((id) => byId.get(id)!),
+    order.map((id) => byId.get(id)).filter((one) => one !== undefined),
     limit,
     skipped,
   );
@@ -603,7 +603,7 @@ export function toEditions(results: SparqlResults, limit: number): Page<Edition>
   }
 
   return page(
-    order.map((id) => byId.get(id)!),
+    order.map((id) => byId.get(id)).filter((one) => one !== undefined),
     limit,
     skipped,
   );
