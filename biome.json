@@ -630,6 +630,7 @@
             "useLiteralKeys": "off"
           },
           "style": {
+            "noDoneCallback": "off",
             "noNonNullAssertion": "off"
           },
           "suspicious": {
