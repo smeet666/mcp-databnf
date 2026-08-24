@@ -13,6 +13,7 @@
 
 import { z } from "zod";
 import type { BnfClient } from "../bnf/client.js";
+import { parseEntityId } from "../bnf/sparql.js";
 import { strictInput } from "./arguments.js";
 import {
   ALIGNMENTS_CAVEAT,
@@ -156,7 +157,7 @@ export type GetWorkArgs = z.infer<typeof getWorkInput>;
 
 export async function runGetWork(client: BnfClient, args: GetWorkArgs): Promise<ToolResult> {
   try {
-    const id = client.identify(args.work_id);
+    const id = parseEntityId(args.work_id);
     const { data, cached, retrievedAt } = await client.getWork(id);
 
     const notes: string[] = [];

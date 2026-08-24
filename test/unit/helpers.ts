@@ -54,9 +54,9 @@ export interface FakeEndpoint {
   fetchImpl: typeof fetch;
   requests: RecordedRequest[];
   /** Every address this server tried to call, in order. */
-  urls(): string[];
+  urls: () => string[];
   /** The query sent on the nth request, counting from zero. */
-  query(index?: number): string;
+  query: (index?: number) => string;
 }
 
 export type Reply =
@@ -149,7 +149,7 @@ export function fakeEndpoint(replies: Reply[]): FakeEndpoint {
  */
 export interface CatalogueEndpoint extends FakeEndpoint {
   /** Every identifier the corpus holds, in the order the endpoint pages them. */
-  corpusOrder(): string[];
+  corpusOrder: () => string[];
 }
 
 export function catalogueEndpoint(entityIris: readonly string[]): CatalogueEndpoint {

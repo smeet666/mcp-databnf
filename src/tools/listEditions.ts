@@ -12,6 +12,7 @@ import { z } from "zod";
 import type { BnfClient } from "../bnf/client.js";
 import type { EntityId } from "../bnf/sparql.js";
 import { notFound } from "../errors.js";
+import { parseEntityId } from "../bnf/sparql.js";
 import { strictInput } from "./arguments.js";
 import {
   GALLICA_CAVEAT,
@@ -103,7 +104,7 @@ export async function runListEditions(
   args: ListEditionsArgs,
 ): Promise<ToolResult> {
   try {
-    const id = client.identify(args.work_id);
+    const id = parseEntityId(args.work_id);
     const offset = (args.page - 1) * args.limit;
     const { data, cached, retrievedAt } = await client.listEditions(id, args.limit, offset);
 

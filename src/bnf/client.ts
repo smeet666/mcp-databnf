@@ -34,7 +34,6 @@ import type {
 } from "../types.js";
 import { REPO_URL } from "../version.js";
 import { Cache } from "./cache.js";
-import { SPARQL_ENDPOINT } from "./endpoint.js";
 import type { SparqlResults } from "./http.js";
 import { runQuery } from "./http.js";
 import {
@@ -59,8 +58,8 @@ import {
   toWorkSummaries,
 } from "./parse.js";
 import { RateLimiter } from "./rateLimiter.js";
-import type { EntityId, SearchReading } from "./sparql.js";
-import { parseEntityId, readSearchText, toIndexTerms, toSearchWords } from "./sparql.js";
+import type { EntityId } from "./sparql.js";
+import { toSearchWords } from "./sparql.js";
 
 /** The class data.bnf.fr types a person with. */
 const PERSON_CLASS = "http://xmlns.com/foaf/0.1/Person";
@@ -187,10 +186,6 @@ export class BnfClient {
   }
 
   /** The one address this client sends anything to. */
-  get endpoint(): string {
-    return SPARQL_ENDPOINT;
-  }
-
   /**
    * `cacheKey` is stated rather than taken from the query, because two reads of
    * one query can produce different values: a list cut to five rows is not the
@@ -254,36 +249,7 @@ export class BnfClient {
   }
 
   /** Read an identifier a caller wrote, refusing anything this dataset cannot address. */
-  identify(input: string): EntityId {
-    return parseEntityId(input);
-  }
-
   /** The words a search will actually look for, which a tool reports back. */
-  words(input: string): string[] {
-    return toSearchWords(input);
-  }
-
-  /**
-   * The terms the index requires, which is what a row's presence rests on.
-   *
-   * The index splits inside a word at an apostrophe and at a hyphen, so a word
-   * a caller wrote as one can reach it as two, each required on its own.
-   */
-  indexTerms(words: readonly string[]): string[] {
-    return toIndexTerms(words);
-  }
-
-  /**
-   * How a piece of caller text became the terms the search was run with.
-   *
-   * A tool reports the reading back, so the same reading has to be the one the
-   * query was built from: the words, the terms the index makes of them, and
-   * the characters that reached neither.
-   */
-  searchReading(input: string): SearchReading {
-    return readSearchText(input);
-  }
-
   searchAuthors(name: string, limit: number, offset: number): Promise<Read<Page<AuthorSummary>>> {
     const words = toSearchWords(name);
     const query = searchAuthorsQuery(words, limit, offset);

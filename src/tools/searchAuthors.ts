@@ -13,6 +13,7 @@ import { z } from "zod";
 import type { BnfClient } from "../bnf/client.js";
 import { TEXT_WINDOW } from "../bnf/queries.js";
 import { invalidInput } from "../errors.js";
+import { readSearchText } from "../bnf/sparql.js";
 import { strictInput } from "./arguments.js";
 import {
   NO_RANKING,
@@ -170,7 +171,7 @@ export async function runSearchAuthors(
   args: SearchAuthorsArgs,
 ): Promise<ToolResult> {
   try {
-    const reading = client.searchReading(args.name);
+    const reading = readSearchText(args.name);
     const words = reading.words;
     if (words.length === 0) {
       return toToolError(

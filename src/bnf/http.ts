@@ -312,7 +312,10 @@ export async function runQuery(options: QueryOptions): Promise<SparqlResults> {
   for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
     if (askedWaitMs > 0) {
       logger.debug(`waiting ${askedWaitMs}ms, as asked`);
-      await new Promise((resolve) => setTimeout(resolve, askedWaitMs));
+      // Read once into a constant: the timer closes over what this attempt was
+      // told to wait, not over whatever a later attempt puts there.
+      const asked = askedWaitMs;
+      await new Promise((resolve) => setTimeout(resolve, asked));
       askedWaitMs = 0;
     }
     await limiter.beforeRequest();
@@ -400,9 +403,10 @@ export function parseResults(body: string): SparqlResults {
   let payload: unknown;
   try {
     payload = JSON.parse(body);
-  } catch {
+  } catch (cause) {
     throw parseFailure("data.bnf.fr answered with something that is not JSON.", {
       url: SPARQL_ENDPOINT,
+      cause,
     });
   }
 
