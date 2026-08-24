@@ -21,6 +21,7 @@ import { z } from "zod";
 import type { BnfClient } from "../bnf/client.js";
 import type { EntityId } from "../bnf/sparql.js";
 import { notFound } from "../errors.js";
+import { parseEntityId } from "../bnf/sparql.js";
 import { strictInput } from "./arguments.js";
 import {
   FORMS_CAVEAT,
@@ -139,7 +140,7 @@ function emptyPageBody(emptiness: EmptyPage, page: number, authorId: string): st
 
 export async function runListWorks(client: BnfClient, args: ListWorksArgs): Promise<ToolResult> {
   try {
-    const id = client.identify(args.author_id);
+    const id = parseEntityId(args.author_id);
     const offset = (args.page - 1) * args.limit;
     const { data, cached, retrievedAt } = await client.worksByAuthor(id, args.limit, offset);
 

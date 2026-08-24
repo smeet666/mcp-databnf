@@ -52,6 +52,7 @@
         "noArguments": "error",
         "noBannedTypes": "error",
         "noCommaOperator": "error",
+        "noDivRegex": "error",
         "noEmptyTypeParameters": "error",
         "noExcessiveCognitiveComplexity": {
           "level": "error",
@@ -74,6 +75,9 @@
           "level": "error",
           "fix": "unsafe"
         },
+        "noForEach": "error",
+        "noImplicitCoercions": "error",
+        "noRedundantDefaultExport": "error",
         "noStaticOnlyClass": "error",
         "noThisInStatic": {
           "level": "error",
@@ -144,10 +148,12 @@
           "level": "error",
           "fix": "unsafe"
         },
+        "noUselessUndefined": "error",
         "noUselessUndefinedInitialization": {
           "level": "error",
           "fix": "unsafe"
         },
+        "noVoid": "error",
         "useArrayFind": "error",
         "useArrowFunction": {
           "level": "error",
@@ -204,8 +210,11 @@
         "noConstantCondition": "error",
         "noConstantMathMinMaxClamp": "error",
         "noConstructorReturn": "error",
+        "noDuplicateArgumentNames": "error",
+        "noDuplicateVariableNames": "error",
         "noEmptyCharacterClassInRegex": "error",
         "noEmptyPattern": "error",
+        "noGlobalDirnameFilename": "error",
         "noGlobalObjectCalls": "error",
         "noInnerDeclarations": "error",
         "noInvalidBuiltinInstantiation": {
@@ -227,6 +236,7 @@
           "level": "error",
           "fix": "safe"
         },
+        "noUndeclaredDependencies": "error",
         "noUndeclaredVariables": "error",
         "noUnreachable": "error",
         "noUnreachableSuper": "error",
@@ -240,6 +250,7 @@
           "level": "error",
           "fix": "unsafe"
         },
+        "noUnusedInstantiation": "error",
         "noUnusedLabels": {
           "level": "error",
           "fix": "safe"
@@ -264,10 +275,12 @@
           "level": "error",
           "fix": "unsafe"
         },
+        "useJsonImportAttributes": "error",
         "useParseIntRadix": {
           "level": "error",
           "fix": "safe"
         },
+        "useSingleJsDocAsterisk": "error",
         "useValidForDirection": "error",
         "useValidTypeof": {
           "level": "error",
@@ -276,27 +289,43 @@
         "useYield": "error"
       },
       "nursery": {
+        "noBaseToString": "error",
+        "noExcessiveNestedCallbacks": "error",
+        "noExtendNative": "error",
         "noFloatingPromises": "error",
         "noIdenticalTestTitle": "error",
         "noImpliedEval": "error",
+        "noLoopFunc": "error",
         "noMisusedPromises": "error",
+        "noNegationInEqualityCheck": "error",
         "noUnnecessaryTemplateExpression": {
           "level": "error",
           "fix": "safe"
         },
         "noUnsafePlusOperands": "error",
+        "noUselessTypeConversion": "error",
         "useArraySome": {
           "level": "error",
           "fix": "unsafe"
         },
+        "useAwaitThenable": "error",
+        "useDisposables": "error",
+        "useExhaustiveSwitchCases": "error",
+        "useImportsFirst": "error",
+        "useIncludes": "error",
         "useMathMinMax": {
           "level": "error",
           "fix": "unsafe"
         },
+        "useNullishCoalescing": "error",
+        "useRegexpExec": "error",
+        "useRegexpTest": "error",
         "useStringStartsEndsWith": {
           "level": "error",
           "fix": "unsafe"
-        }
+        },
+        "useThisInClassMethods": "error",
+        "useVarsOnTop": "error"
       },
       "performance": {
         "noAccumulatingSpread": "error",
@@ -305,6 +334,7 @@
           "fix": "unsafe"
         },
         "noDynamicNamespaceImportAccess": "error",
+        "noNamespaceImport": "error",
         "noReExportAll": "error"
       },
       "security": {
@@ -313,11 +343,16 @@
         "noScriptUrl": "error"
       },
       "style": {
+        "noCommonJs": "error",
         "noDoneCallback": "error",
+        "noEnum": "error",
+        "noExportedImports": "error",
         "noImplicitBoolean": {
           "level": "error",
           "fix": "safe"
         },
+        "noIncrementDecrement": "error",
+        "noInferrableTypes": "error",
         "noMultiAssign": "error",
         "noNamespace": "error",
         "noNegationElse": {
@@ -396,12 +431,18 @@
           "level": "error",
           "fix": "unsafe"
         },
+        "useConsistentMethodSignatures": "error",
+        "useConsistentObjectDefinitions": "error",
+        "useConsistentTypeDefinitions": "error",
         "useConst": {
           "level": "error",
           "fix": "safe"
         },
         "useDefaultParameterLast": "error",
+        "useDefaultSwitchClause": "error",
         "useEnumInitializers": "error",
+        "useErrorCause": "error",
+        "useExplicitLengthCheck": "error",
         "useExponentiationOperator": {
           "level": "error",
           "fix": "safe"
@@ -411,6 +452,7 @@
           "fix": "safe"
         },
         "useForOf": "error",
+        "useGlobalThis": "error",
         "useGroupedAccessorPairs": "error",
         "useImportType": {
           "level": "error",
@@ -427,6 +469,7 @@
           "level": "error",
           "fix": "safe"
         },
+        "useReadonlyClassProperties": "error",
         "useSelfClosingElements": "error",
         "useShorthandAssign": {
           "level": "error",
@@ -441,6 +484,7 @@
           "level": "error",
           "fix": "unsafe"
         },
+        "useSymbolDescription": "error",
         "useTemplate": {
           "level": "error",
           "fix": "safe"
@@ -450,7 +494,8 @@
           "fix": "safe"
         },
         "useThrowOnlyError": "error",
-        "useTrimStartEnd": "error"
+        "useTrimStartEnd": "error",
+        "useUnifiedTypeSignatures": "error"
       },
       "suspicious": {
         "noApproximativeNumericConstant": {
@@ -460,6 +505,8 @@
         "noArrayIndexKey": "error",
         "noAssignInExpressions": "error",
         "noAsyncPromiseExecutor": "error",
+        "noBiomeFirstException": "error",
+        "noBitwiseOperators": "error",
         "noCatchAssign": "error",
         "noClassAssign": "error",
         "noCompareNegZero": {
@@ -481,6 +528,7 @@
           "level": "error",
           "fix": "unsafe"
         },
+        "noDeprecatedImports": "error",
         "noDocumentCookie": "error",
         "noDoubleEquals": {
           "level": "error",
@@ -497,6 +545,8 @@
         "noDuplicateObjectKeys": "error",
         "noDuplicateParameters": "error",
         "noDuplicateTestHooks": "error",
+        "noDuplicatedSpreadProps": "error",
+        "noEmptyBlockStatements": "error",
         "noEmptyInterface": {
           "level": "error",
           "fix": "safe"
@@ -507,6 +557,8 @@
             "allowComments": true
           }
         },
+        "noEqualsToNull": "error",
+        "noEvolvingTypes": "error",
         "noExplicitAny": "error",
         "noExportsInTest": "error",
         "noExtraNonNullAssertion": {
@@ -518,6 +570,7 @@
           "level": "error",
           "fix": "unsafe"
         },
+        "noForIn": "error",
         "noFunctionAssign": "error",
         "noGlobalAssign": "error",
         "noGlobalIsFinite": {
@@ -549,18 +602,23 @@
           "level": "error",
           "fix": "safe"
         },
+        "noParametersOnlyUsedInRecursion": "error",
         "noProto": "error",
         "noPrototypeBuiltins": {
           "level": "error",
           "fix": "safe"
         },
+        "noQuickfixBiome": "error",
         "noRedeclare": "error",
         "noRedundantUseStrict": {
           "level": "error",
           "fix": "safe"
         },
+        "noReturnAssign": "error",
         "noSelfCompare": "error",
+        "noShadow": "error",
         "noShadowRestrictedNames": "error",
+        "noSkippedTests": "error",
         "noSparseArray": {
           "level": "error",
           "fix": "unsafe"
@@ -587,8 +645,11 @@
         },
         "noWith": "error",
         "useAdjacentOverloadSignatures": "error",
+        "useArraySortCompare": "error",
         "useAwait": "error",
+        "useBiomeIgnoreFolder": "error",
         "useDefaultSwitchClauseLast": "error",
+        "useDeprecatedDate": "error",
         "useErrorMessage": "error",
         "useGetterReturn": "error",
         "useGoogleFontDisplay": "error",
@@ -606,7 +667,9 @@
           "level": "error",
           "fix": "safe"
         },
-        "noConsole": "off"
+        "noConsole": "off",
+        "useStaticResponseMethods": "error",
+        "useStrictMode": "error"
       }
     }
   },
@@ -634,6 +697,7 @@
             "noNonNullAssertion": "off"
           },
           "suspicious": {
+            "noBitwiseOperators": "off",
             "noExplicitAny": "off",
             "noUnusedExpressions": "off",
             "useAwait": "off"

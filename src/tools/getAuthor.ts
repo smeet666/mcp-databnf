@@ -11,6 +11,7 @@
 
 import { z } from "zod";
 import type { BnfClient } from "../bnf/client.js";
+import { parseEntityId } from "../bnf/sparql.js";
 import { strictInput } from "./arguments.js";
 import {
   ALIGNMENTS_CAVEAT,
@@ -56,7 +57,7 @@ function notesOnWhatTheRecordStates(data: AuthorDetail, args: GetAuthorArgs): st
   // the disagreement is stated: nothing on the record says which side a
   // cataloguer meant, and choosing one would settle a date the BnF has not.
   const headings = [data.label, ...data.otherNames.map((other) => other.label)];
-  const conflicts = [
+  const conflicts: string[] = [
     ...new Set(
       headings.flatMap((heading) => headingYearConflicts(heading, data.birthYear, data.deathYear)),
     ),
@@ -174,7 +175,7 @@ export type GetAuthorArgs = z.infer<typeof getAuthorInput>;
 
 export async function runGetAuthor(client: BnfClient, args: GetAuthorArgs): Promise<ToolResult> {
   try {
-    const id = client.identify(args.author_id);
+    const id = parseEntityId(args.author_id);
     const { data, cached, retrievedAt } = await client.getAuthor(id);
 
     const notes: string[] = [];

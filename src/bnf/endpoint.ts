@@ -45,8 +45,8 @@ export function assertRequestable(url: string): void {
   let parsed: URL;
   try {
     parsed = new URL(url);
-  } catch {
-    throw refusal(`mcp-databnf refuses to request "${url}": it is not an address.`);
+  } catch (cause) {
+    throw refusal(`mcp-databnf refuses to request "${url}": it is not an address.`, cause);
   }
   const host = parsed.hostname.toLowerCase().replace(/\.$/, "");
   if (host !== ALLOWED_HOST) {
@@ -64,9 +64,10 @@ export function assertRequestable(url: string): void {
  * next attempt would be made against the same address. A decision not to call a
  * host is settled, so it has to arrive as an answer rather than as a mishap.
  */
-const refusal = (message: string) =>
+const refusal = (message: string, cause?: unknown) =>
   new BnfError("network_error", message, {
     hint: "This server reads the BnF catalogue at data.bnf.fr. It holds no licence to read the digitised contents, so it does not follow an address that leaves that host.",
+    cause,
   });
 
 /** True when an address points at Gallica, whatever the scheme or the case. */

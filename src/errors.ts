@@ -27,6 +27,8 @@ export interface ErrorDetails {
   /** The address that produced the failure, for a bug report. */
   url?: string;
   status?: number;
+  /** What was raised underneath, kept for the bug report the hint asks for. */
+  cause?: unknown;
 }
 
 export class BnfError extends Error {
@@ -34,7 +36,7 @@ export class BnfError extends Error {
   readonly details: ErrorDetails;
 
   constructor(code: ErrorCode, message: string, details: ErrorDetails = {}) {
-    super(message);
+    super(message, details.cause === undefined ? undefined : { cause: details.cause });
     this.name = "BnfError";
     this.code = code;
     this.details = details;

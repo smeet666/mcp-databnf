@@ -18,6 +18,7 @@ import { z } from "zod";
 import type { BnfClient } from "../bnf/client.js";
 import { invalidInput, notFound } from "../errors.js";
 import type { DigitisedLink } from "../types.js";
+import { parseEntityId } from "../bnf/sparql.js";
 import { strictInput } from "./arguments.js";
 import {
   GALLICA_CAVEAT,
@@ -127,7 +128,7 @@ export async function runFindDigitised(
   args: FindDigitisedArgs,
 ): Promise<ToolResult> {
   try {
-    const id = client.identify(args.id);
+    const id = parseEntityId(args.id);
 
     const notes: string[] = [];
 
