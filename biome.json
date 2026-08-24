@@ -62,7 +62,7 @@
         "noExcessiveLinesPerFunction": {
           "level": "error",
           "options": {
-            "maxLines": 400
+            "maxLines": 200
           }
         },
         "noExcessiveNestedTestSuites": "error",
@@ -172,7 +172,7 @@
         "useMaxParams": {
           "level": "error",
           "options": {
-            "max": 10
+            "max": 5
           }
         },
         "useNumericLiterals": {
