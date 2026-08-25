@@ -197,6 +197,10 @@
           "level": "error",
           "fix": "safe"
         },
+        "useSimplifiedLogicExpression": {
+          "level": "error",
+          "fix": "safe"
+        },
         "useWhile": {
           "level": "error",
           "fix": "safe"
@@ -226,6 +230,10 @@
         "noNonoctalDecimalEscape": "error",
         "noPrecisionLoss": "error",
         "noPrivateImports": "error",
+        "noProcessGlobal": {
+          "level": "error",
+          "fix": "safe"
+        },
         "noSelfAssign": "error",
         "noSetterReturn": "error",
         "noStringCaseMismatch": {
@@ -346,6 +354,7 @@
         "noCommonJs": "error",
         "noDoneCallback": "error",
         "noEnum": "error",
+        "noExcessiveClassesPerFile": "error",
         "noExportedImports": "error",
         "noImplicitBoolean": {
           "level": "error",
@@ -354,6 +363,7 @@
         "noIncrementDecrement": "error",
         "noInferrableTypes": "error",
         "noMultiAssign": "error",
+        "noMultilineString": "error",
         "noNamespace": "error",
         "noNegationElse": {
           "level": "error",
@@ -375,6 +385,10 @@
         },
         "noRestrictedImports": "error",
         "noRestrictedTypes": "error",
+        "noShoutyConstants": {
+          "level": "error",
+          "fix": "unsafe"
+        },
         "noSubstr": {
           "level": "error",
           "fix": "unsafe"
@@ -451,6 +465,7 @@
           "level": "error",
           "fix": "safe"
         },
+        "useFilenamingConvention": "error",
         "useForOf": "error",
         "useGlobalThis": "error",
         "useGroupedAccessorPairs": "error",
@@ -465,6 +480,15 @@
           "fix": "safe"
         },
         "useNumberNamespace": "error",
+        "useNumericSeparators": {
+          "level": "error",
+          "fix": "safe",
+          "options": {
+            "hexadecimal": {
+              "minimumDigits": 255
+            }
+          }
+        },
         "useObjectSpread": {
           "level": "error",
           "fix": "safe"
@@ -668,6 +692,12 @@
           "fix": "safe"
         },
         "noConsole": "off",
+        "useRequiredScripts": {
+          "level": "error",
+          "options": {
+            "requiredScripts": ["build", "typecheck", "test", "check", "format"]
+          }
+        },
         "useStaticResponseMethods": "error",
         "useStrictMode": "error"
       }
