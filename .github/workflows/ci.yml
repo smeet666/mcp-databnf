@@ -21,6 +21,15 @@ jobs:
       # nit must never hide a failing test, so both jobs start at once.
       - run: npm run check
 
+      # The corpus the unit tests read is written into the repository, so a
+      # generator edited without regenerating leaves the suite reading a corpus
+      # nobody meant. Regenerating here and asking for no difference is what
+      # says so, rather than letting a stale corpus pass unnoticed.
+      - name: The committed corpus is the one the generator writes
+        run: |
+          npm run build:fixtures
+          git diff --exit-code test/fixtures
+
   test:
     runs-on: ubuntu-latest
     strategy:

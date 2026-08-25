@@ -57,7 +57,6 @@
   "scripts": {
     "build": "tsup",
     "typecheck": "tsc --noEmit",
-    "pretest": "npm run build:fixtures",
     "test": "vitest run test/unit",
     "test:live": "vitest run test/live --testTimeout=180000",
     "build:fixtures": "node scripts/build-fixtures.mjs",
