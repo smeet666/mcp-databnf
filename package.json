@@ -44,7 +44,7 @@
     "CHANGELOG.md"
   ],
   "engines": {
-    "node": ">=20.0.0"
+    "node": ">=24.0.0"
   },
   "mcpName": "io.github.smeet666/mcp-databnf",
   "scripts": {
