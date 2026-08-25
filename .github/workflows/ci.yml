@@ -48,3 +48,17 @@ jobs:
       # The nightly canary is where the real endpoint is exercised.
       - run: npm test
       - run: npm run build
+
+  image:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - run: docker build -t "${{ github.event.repository.name }}:ci" .
+      # A recipe that builds says nothing about what it built: the entry point is
+      # a path inside the image, and a wrong one only shows when something starts
+      # it. One initialize over stdio is what says the image holds a server.
+      - name: Start the image and read what it answers
+        run: |
+          printf '%s\n' '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"ci","version":"0"}}}' \
+            | timeout 60 docker run -i --rm "${{ github.event.repository.name }}:ci" \
+            | grep -q '"serverInfo"'
