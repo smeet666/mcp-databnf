@@ -126,7 +126,7 @@ export function toDigitisedLink(
   fromId: string,
   fromTitle: string | null,
 ): DigitisedLink | null {
-  if (!address || !isGallicaAddress(address)) {
+  if (!(address && isGallicaAddress(address))) {
     return null;
   }
   const segment = /ark:\/12148\/([^/?#]+)/.exec(address)?.[1] ?? null;

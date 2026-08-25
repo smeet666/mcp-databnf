@@ -6,6 +6,7 @@
  * stderr, because a stray line on stdout corrupts the session for the client.
  */
 
+import process from "node:process";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { createServer } from "./server.js";
 

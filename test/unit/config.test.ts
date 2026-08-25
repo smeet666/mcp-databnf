@@ -7,6 +7,7 @@
  * the opposite is true.
  */
 
+import process from "node:process";
 import { describe, expect, it } from "vitest";
 import {
   DEFAULT_INTERVAL_MS,

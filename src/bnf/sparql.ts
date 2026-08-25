@@ -339,7 +339,7 @@ export const iriOf = (id: EntityId): string => `<${id.iri}>`;
  * asking the endpoint for a page a hundred thousand rows deep.
  */
 export function boundedInteger(value: number, min: number, max: number, name: string): number {
-  if (!Number.isFinite(value) || !Number.isInteger(value)) {
+  if (!(Number.isFinite(value) && Number.isInteger(value))) {
     throw invalidInput(`'${name}' has to be a whole number.`);
   }
   if (value < min || value > max) {

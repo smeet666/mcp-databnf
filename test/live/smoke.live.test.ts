@@ -17,6 +17,7 @@
  * and that an absence still arrives as an absence carrying a code.
  */
 
+import process from "node:process";
 import { describe, expect, it } from "vitest";
 import { BnfClient } from "../../src/bnf/client.js";
 import { runFindDigitised } from "../../src/tools/findDigitised.js";
