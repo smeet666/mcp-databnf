@@ -11,6 +11,11 @@
 
 import { BnfError } from "../errors.js";
 
+/** The root a host name may end on, which names the same host without it. */
+const TRAILING_DOT = /\.$/;
+const FRAGMENT = /#.*$/;
+const HTTP_SCHEME = /^http:/;
+
 /** The one address this server sends a request to. */
 export const SPARQL_ENDPOINT = "https://data.bnf.fr/sparql";
 
@@ -48,7 +53,7 @@ export function assertRequestable(url: string): void {
   } catch (cause) {
     throw refusal(`mcp-databnf refuses to request "${url}": it is not an address.`, cause);
   }
-  const host = parsed.hostname.toLowerCase().replace(/\.$/, "");
+  const host = parsed.hostname.toLowerCase().replace(TRAILING_DOT, "");
   if (host !== ALLOWED_HOST) {
     throw refusal(
       `mcp-databnf requests ${ALLOWED_HOST} and nothing else; "${host}" was refused. ` +
@@ -76,7 +81,7 @@ export function isGallicaAddress(address: string): boolean {
     // A trailing dot names the root of the domain tree and resolves to the same
     // host. Comparing without stripping it would read a Gallica address as
     // somewhere else, and the link would be dropped from the answer.
-    const host = new URL(address).hostname.toLowerCase().replace(/\.$/, "");
+    const host = new URL(address).hostname.toLowerCase().replace(TRAILING_DOT, "");
     return host === GALLICA_HOST || host.endsWith(`.${GALLICA_HOST}`);
   } catch {
     return false;
@@ -115,7 +120,7 @@ export const TEMP_WORK_BASE = "http://data.bnf.fr/temp-work/";
 
 /** The page a person can open for a record, which every result carries. */
 export const publicPageFor = (entityIri: string): string =>
-  entityIri.replace(/#.*$/, "").replace(/^http:/, "https:");
+  entityIri.replace(FRAGMENT, "").replace(HTTP_SCHEME, "https:");
 
 /** The BnF general catalogue, where a record is described for a reader. */
 export const catalogueUrlFor = (arkId: string): string =>

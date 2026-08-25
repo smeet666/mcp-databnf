@@ -22,6 +22,9 @@ import type { Logger } from "../config.js";
 import { SPARQL_ENDPOINT, assertRequestable } from "./endpoint.js";
 import type { RateLimiter } from "./rateLimiter.js";
 
+/** The shape the endpoint's own engine writes a refusal in. */
+const VIRTUOSO_ERROR = /^Virtuoso\s+(\w+)\s+Error\s+([\s\S]*)$/;
+
 /** The JSON shape a SPARQL SELECT answers with. */
 export interface SparqlTerm {
   type: "uri" | "literal" | "typed-literal" | "bnode";
@@ -126,7 +129,7 @@ function backoffMs(attempt: number): number {
 export function readEngineError(
   body: string,
 ): { kind: "compile" | "runtime"; text: string } | null {
-  const match = /^Virtuoso\s+(\w+)\s+Error\s+([\s\S]*)$/.exec(body.trim());
+  const match = VIRTUOSO_ERROR.exec(body.trim());
   if (!match) {
     return null;
   }

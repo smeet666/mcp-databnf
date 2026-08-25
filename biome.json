@@ -343,7 +343,8 @@
         },
         "noDynamicNamespaceImportAccess": "error",
         "noNamespaceImport": "error",
-        "noReExportAll": "error"
+        "noReExportAll": "error",
+        "useTopLevelRegex": "error"
       },
       "security": {
         "noBlankTarget": "error",
@@ -355,6 +356,12 @@
         "noDoneCallback": "error",
         "noEnum": "error",
         "noExcessiveClassesPerFile": "error",
+        "noExcessiveLinesPerFile": {
+          "level": "error",
+          "options": {
+            "maxLines": 1800
+          }
+        },
         "noExportedImports": "error",
         "noImplicitBoolean": {
           "level": "error",
@@ -445,6 +452,7 @@
           "level": "error",
           "fix": "unsafe"
         },
+        "useConsistentMemberAccessibility": "error",
         "useConsistentMethodSignatures": "error",
         "useConsistentObjectDefinitions": "error",
         "useConsistentTypeDefinitions": "error",
@@ -721,6 +729,9 @@
           "complexity": {
             "noExcessiveLinesPerFunction": "off",
             "useLiteralKeys": "off"
+          },
+          "performance": {
+            "useTopLevelRegex": "off"
           },
           "style": {
             "noDoneCallback": "off",

@@ -22,6 +22,18 @@
 
 import { invalidInput } from "../errors.js";
 
+/** What a term can carry: letters, digits, the joiners and the spaces between them. */
+const KEPT_CHARACTER = /[\p{L}\p{N}'\-\s]/u;
+const TYPOGRAPHIC_APOSTROPHE = /[‘’ʼ]/u;
+const LEADING_JOINERS = /^['-]+/u;
+const TRAILING_JOINERS = /['-]+$/u;
+const JOINERS = /['-]+/u;
+const ARK_IN_INPUT = /(?:^|\/)ark:\/12148\/(c[bc][0-9a-z]+)/i;
+const LEADING_HASH = /^#/;
+const FRAGMENT_OR_QUERY = /[#?]/;
+const TEMP_WORK_IN_INPUT = /temp-work\/([0-9a-f]{32})/i;
+const GALLICA_ARK = /ark:\/12148\/([0-9a-z]+)/i;
+
 /**
  * Escape a string for a SPARQL short literal in double quotes.
  *
@@ -99,7 +111,7 @@ export function invisibleCharacters(input: string): string[] {
 export function charactersSetAside(input: string): string[] {
   const found: string[] = [];
   for (const character of withoutInvisibles(input).normalize("NFC")) {
-    if (/[\p{L}\p{N}'\-\s]/u.test(character) || /[‘’ʼ]/u.test(character)) {
+    if (KEPT_CHARACTER.test(character) || TYPOGRAPHIC_APOSTROPHE.test(character)) {
       continue;
     }
     if (!found.includes(character)) {
@@ -162,7 +174,7 @@ export function toSearchWords(input: string): string[] {
   const words: string[] = [];
   for (const raw of cleaned.split(" ")) {
     // Trim the joiners at the edges: they only mean something between letters.
-    const word = raw.replace(/^['-]+/u, "").replace(/['-]+$/u, "");
+    const word = raw.replace(LEADING_JOINERS, "").replace(TRAILING_JOINERS, "");
     if (word === "") {
       continue;
     }
@@ -191,7 +203,7 @@ export function toSearchWords(input: string): string[] {
 export function toIndexTerms(words: readonly string[]): string[] {
   const terms: string[] = [];
   for (const word of words) {
-    for (const piece of word.split(/['-]+/u)) {
+    for (const piece of word.split(JOINERS)) {
       if (piece !== "" && !terms.includes(piece)) {
         terms.push(piece);
       }
@@ -264,8 +276,10 @@ export function parseEntityId(input: string): EntityId {
     throw invalidInput("An identifier is required.");
   }
 
-  const arkMatch = /(?:^|\/)ark:\/12148\/(c[bc][0-9a-z]+)/i.exec(trimmed);
-  const bare = arkMatch ? arkMatch[1] : trimmed.replace(/^#/, "").split(/[#?]/)[0];
+  const arkMatch = ARK_IN_INPUT.exec(trimmed);
+  const bare = arkMatch
+    ? arkMatch[1]
+    : trimmed.replace(LEADING_HASH, "").split(FRAGMENT_OR_QUERY)[0];
   const candidate = (bare ?? "").toLowerCase();
 
   if (ARK_ID.test(candidate)) {
@@ -277,7 +291,7 @@ export function parseEntityId(input: string): EntityId {
     };
   }
 
-  const tempMatch = /temp-work\/([0-9a-f]{32})/i.exec(trimmed);
+  const tempMatch = TEMP_WORK_IN_INPUT.exec(trimmed);
   const digest = (tempMatch?.[1] ?? candidate).toLowerCase();
   if (TEMP_WORK_ID.test(digest)) {
     return {
@@ -316,7 +330,7 @@ function hintFor(input: string): string {
     );
   }
 
-  const gallicaArk = /ark:\/12148\/([0-9a-z]+)/i.exec(input)?.[1] ?? input;
+  const gallicaArk = GALLICA_ARK.exec(input)?.[1] ?? input;
   if (GALLICA_DOCUMENT.test(gallicaArk)) {
     return (
       "That is a Gallica identifier: it names a digitised document rather than a record in the catalogue, and these tools read the catalogue. " +
