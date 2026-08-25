@@ -25,7 +25,10 @@
     "url": "git+https://github.com/smeet666/mcp-databnf.git"
   },
   "license": "MIT",
-  "author": "Damien Bouissou",
+  "author": {
+    "name": "Damien Bouissou",
+    "url": "https://github.com/smeet666"
+  },
   "type": "module",
   "bin": {
     "mcp-databnf": "dist/index.js"
