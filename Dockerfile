@@ -1,5 +1,5 @@
 # How this server is built for a directory that runs it in a container.
-FROM node:22-slim
+FROM node:24-slim
 
 WORKDIR /app
 
