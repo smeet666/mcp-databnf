@@ -28,6 +28,9 @@ import {
 } from "./shared.js";
 import type { EmptyPage, ToolResult } from "./shared.js";
 
+/** The joiners a name carries, which an index may or may not keep. */
+const JOINER = /['-]/u;
+
 export const searchAuthorsDescription = [
   "Find a person in the Bibliothèque nationale de France authority file by name, and get the identifier the other tools take.",
   "This matches the name the BnF records, so it takes a surname, a full name or both names in either order. It does not read biographies, so it cannot find a person from what they wrote or what they did.",
@@ -219,7 +222,7 @@ export async function runSearchAuthors(
     // A caller checking why a row is on the list reads the terms, so the ones
     // the index made out of a word are traced back to it before anything that
     // merely qualifies the answer.
-    const split = words.filter((word) => /['-]/u.test(word));
+    const split = words.filter((word) => JOINER.test(word));
     if (split.length > 0) {
       notes.push(
         `${split.map((word) => `"${word}"`).join(", ")} reached the index as separate terms: it cuts a word at an apostrophe and at a hyphen, and requires each piece to appear in the name rather than in that arrangement, so a record writing the pieces apart is a match.`,

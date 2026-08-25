@@ -3,6 +3,10 @@
 import { z } from "zod";
 import { BnfError } from "../errors.js";
 
+const ISO_DAY = /^\d{4}-\d{2}-\d{2}$/;
+const BRACKETED_TAIL = /\(([^()]*)\)\s*$/;
+const YEAR = /^\d{4}$/;
+
 /**
  * The text block is what many clients render, and some render nothing else, so
  * it has to answer on its own. This ceiling is what keeps a list of editions
@@ -24,7 +28,7 @@ export const SOURCE_NAME = "data.bnf.fr (Bibliothèque nationale de France)";
 /** The date of retrieval, written as the calendar day it names. */
 export function retrievalDay(retrievedAt: string): string {
   const day = retrievedAt.slice(0, 10);
-  return /^\d{4}-\d{2}-\d{2}$/.test(day) ? day : retrievedAt;
+  return ISO_DAY.test(day) ? day : retrievedAt;
 }
 
 export function attribution(retrievedAt: string, sourceUrl?: string): string {
@@ -315,10 +319,10 @@ export function recordKindOf(types: readonly string[]): "person" | "work" | null
 
 /** The years a BnF heading states in its brackets, read off the end of it. */
 function headingYears(label: string): { birth: number | null; death: number | null } {
-  const bracketed = /\(([^()]*)\)\s*$/.exec(label);
+  const bracketed = BRACKETED_TAIL.exec(label);
   const [birth, death] = (bracketed?.[1] ?? "").split("-");
   const year = (part: string | undefined): number | null =>
-    part !== undefined && /^\d{4}$/.test(part.trim()) ? Number(part.trim()) : null;
+    part !== undefined && YEAR.test(part.trim()) ? Number(part.trim()) : null;
   return { birth: year(birth), death: year(death) };
 }
 

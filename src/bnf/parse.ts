@@ -21,6 +21,15 @@ import type {
   WorkSummary,
 } from "../types.js";
 
+const ARK_IN_IRI = /ark:\/12148\/(c[bc][0-9a-z]+)/i;
+const TEMP_WORK_IN_IRI = /temp-work\/([0-9a-f]{32})/i;
+const TRAILING_SEPARATOR = /[/#]$/;
+const PATH_SEPARATOR = /[/#]/;
+const ARK_SEGMENT = /ark:\/12148\/([^/?#]+)/;
+const QUERY_START = /[?#]/;
+const LEADING_DOTS = /^[./]+/;
+const TRAILING_SLASHES = /\/+$/;
+
 /** Predicates read off a record. Named once, so a rename is one edit. */
 const P = {
   type: "http://www.w3.org/1999/02/22-rdf-syntax-ns#type",
@@ -98,11 +107,11 @@ const integer = (term: SparqlTerm | undefined): number | null => {
 
 /** The identifier a caller quotes, read back off the address of a record. */
 export function idFromIri(iri: string): string | null {
-  const ark = /ark:\/12148\/(c[bc][0-9a-z]+)/i.exec(iri);
+  const ark = ARK_IN_IRI.exec(iri);
   if (ark?.[1]) {
     return ark[1].toLowerCase();
   }
-  const temp = /temp-work\/([0-9a-f]{32})/i.exec(iri);
+  const temp = TEMP_WORK_IN_IRI.exec(iri);
   if (temp?.[1]) {
     return `temp-work/${temp[1].toLowerCase()}`;
   }
@@ -111,7 +120,7 @@ export function idFromIri(iri: string): string | null {
 
 /** The last segment of a vocabulary address, which is the term itself. */
 const vocabularyTerm = (iri: string): string =>
-  decodeURIComponent(iri.replace(/[/#]$/, "").split(/[/#]/).pop() ?? iri);
+  decodeURIComponent(iri.replace(TRAILING_SEPARATOR, "").split(PATH_SEPARATOR).pop() ?? iri);
 
 /**
  * A Gallica address turned into a link.
@@ -129,7 +138,7 @@ export function toDigitisedLink(
   if (!(address && isGallicaAddress(address))) {
     return null;
   }
-  const segment = /ark:\/12148\/([^/?#]+)/.exec(address)?.[1] ?? null;
+  const segment = ARK_SEGMENT.exec(address)?.[1] ?? null;
   if (!segment) {
     return null;
   }
@@ -155,9 +164,9 @@ export function toDigitisedLink(
  * document while having been handed a picture of a page of it.
  */
 function renderingOf(address: string, ark: string): string | null {
-  const path = address.split(/[?#]/)[0] ?? address;
+  const path = address.split(QUERY_START)[0] ?? address;
   const after = path.slice(path.indexOf(`ark:/12148/${ark}`) + `ark:/12148/${ark}`.length);
-  const rendering = after.replace(/^[./]+/, "").replace(/\/+$/, "");
+  const rendering = after.replace(LEADING_DOTS, "").replace(TRAILING_SLASHES, "");
   return rendering === "" ? null : rendering;
 }
 

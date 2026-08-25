@@ -32,6 +32,9 @@ import {
 } from "./shared.js";
 import type { EmptyPage, ToolResult } from "./shared.js";
 
+/** The joiners a name carries, which an index may or may not keep. */
+const JOINER = /['-]/u;
+
 export const searchWorksDescription = [
   "Find a work in the Bibliothèque nationale de France catalogue by words in its title, and get the identifier get_work and list_editions take.",
   "A row matches when its title carries every word given. The index returns no measure of how well a row matches, so the rows are ordered by the address of the record and the work a person would call the obvious answer can sit anywhere in the list or on a later page.",
@@ -196,7 +199,7 @@ export async function runSearchWorks(
     // A caller checking why a row is on the list reads the terms, so the ones
     // the index made out of a word are traced back to it before anything that
     // merely qualifies the answer.
-    const split = words.filter((word) => /['-]/u.test(word));
+    const split = words.filter((word) => JOINER.test(word));
     if (split.length > 0) {
       notes.push(
         `${split.map((word) => `"${word}"`).join(", ")} reached the index as separate terms: it cuts a word at an apostrophe and at a hyphen, and requires each piece to appear in the title rather than in that arrangement, so a record writing the pieces apart is a match.`,
