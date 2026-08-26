@@ -1,5 +1,19 @@
 # Changelog
 
+## 2.0.0
+
+- **This server now needs node 24 or later.** Node 20 reached its end of
+  support on 2026-04-30 and node 22 is no longer what this code is built and
+  typed against. That is what makes this a major version: an install on an
+  older node is refused rather than left to fail somewhere later.
+- **Every refusal of an argument opens with `invalid_input`.** A value outside
+  its bounds, of the wrong type, or outside the set an argument reads used to
+  come back in the validator's own words, with no code to branch on.
+- **A container image is published for each version**, on ghcr, for amd64 and
+  arm64. The readme carries the configuration that runs it.
+- The published package carries its changelog, and the entry point it declares
+  for the package root now publishes its types.
+
 This project follows [semantic versioning](https://semver.org/).
 
 ## 1.1.1
