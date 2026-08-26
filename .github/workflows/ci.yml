@@ -57,6 +57,31 @@ jobs:
       - run: for i in 1 2 3; do npm test || exit 1; done
       - run: npm run build
 
+  coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      # A coverage figure does not depend on the version of node that produced
+      # it, so it is measured once, like the lint verdict.
+      - run: npm run coverage
+
+      # The figure is read where the run is read, rather than by opening a log.
+      - name: Write the figures into the run summary
+        if: always()
+        run: |
+          node -e '
+            const s = require("./coverage/coverage-summary.json").total;
+            const rows = ["statements", "branches", "functions", "lines"]
+              .map((k) => `| ${k} | ${s[k].pct}% | ${s[k].covered}/${s[k].total} |`)
+              .join("\n");
+            process.stdout.write(`| what | reached | counted |\n| --- | --- | --- |\n${rows}\n`);
+          ' >> "$GITHUB_STEP_SUMMARY"
+
   image:
     runs-on: ubuntu-latest
     steps:
