@@ -48,7 +48,7 @@ jobs:
 
       - name: Close the report when the routes answer again
         if: success()
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             // An open report says the routes are failing. Left open after they
@@ -80,7 +80,7 @@ jobs:
 
       - name: Report a broken canary
         if: failure()
-        uses: actions/github-script@v8
+        uses: actions/github-script@v9
         with:
           script: |
             const title = "Live canary failing: data.bnf.fr may have changed";
