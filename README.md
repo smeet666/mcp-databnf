@@ -48,6 +48,23 @@ npx mcp-databnf
 }
 ```
 
+### With Docker
+
+```json
+{
+  "mcpServers": {
+    "databnf": {
+      "command": "docker",
+      "args": ["run", "-i", "--rm", "ghcr.io/smeet666/mcp-databnf:2.0.0"]
+    }
+  }
+}
+```
+
+`-i` keeps stdin open, which is where the protocol travels, and no `-t` is
+passed: a TTY rewrites the stream and breaks it. The container needs outbound
+HTTPS to `data.bnf.fr`, `catalogue.bnf.fr` and `isni.org`, and nothing else: no volume, no port, no environment variable, no credential.
+
 ## The seven tools
 
 | Tool             | Answers                                                                                                                   |
@@ -272,6 +289,24 @@ npx mcp-databnf
   }
 }
 ```
+
+### Avec Docker
+
+```json
+{
+  "mcpServers": {
+    "databnf": {
+      "command": "docker",
+      "args": ["run", "-i", "--rm", "ghcr.io/smeet666/mcp-databnf:2.0.0"]
+    }
+  }
+}
+```
+
+`-i` garde l'entrée standard ouverte, qui est le canal du protocole, et aucun
+`-t` n'est passé : un terminal réécrit le flux et le casse. Le conteneur a besoin
+d'un accès HTTPS sortant vers `data.bnf.fr`, `catalogue.bnf.fr` et `isni.org`, et de rien d'autre :
+aucun volume, aucun port, aucune variable d'environnement, aucun identifiant.
 
 ## Les sept outils
 
