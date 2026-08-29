@@ -1,10 +1,13 @@
 /**
- * Writes into packaging/manifest.json what the built server declares.
+ * Writes into packaging/manifest.json the tools the built server declares.
  *
- * A host reads the manifest before installing anything, and a directory reads
- * the bundle it is deposited as: both are answered from this file. The tool
- * names and their argument schemas therefore come from the server itself, since
- * a schema kept by hand is a second declaration that drifts from the first.
+ * A host reads the manifest before installing anything, so a tool gained
+ * without a line there is announced to nobody. The names therefore come from
+ * the server itself rather than from whoever edits the file next.
+ *
+ * The bundle format defines two fields on a tool, a name and a description, and
+ * its packer refuses any other: the argument schema a directory wants is added
+ * to a copy at deposit time, never to this file.
  *
  * The one-line description stays written by hand, because it addresses a person
  * choosing whether to install rather than a model choosing whether to call. A
@@ -39,7 +42,7 @@ manifest.tools = tools.map((tool) => {
     description = `${tool.description.split(". ")[0]}.`.replace(/\.\.$/, ".");
     process.stderr.write(`${tool.name}: took the server's opening sentence; shorten it by hand\n`);
   }
-  return { name: tool.name, description, inputSchema: tool.inputSchema };
+  return { name: tool.name, description };
 });
 
 for (const name of written.keys()) {
