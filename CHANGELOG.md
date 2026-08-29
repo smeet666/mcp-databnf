@@ -1,5 +1,13 @@
 # Changelog
 
+## 2.1.0
+
+- **The client entry point publishes `parseEntityId` and the `EntityId` type.**
+  Every route that reads one record takes an identifier rather than a string,
+  because one built from a guess reaches a record that does not exist and the
+  answer reads as an absence. A program importing `mcp-databnf/client` can now
+  build one, which it could not before.
+
 ## 2.0.0
 
 - **This server now needs node 24 or later.** Node 20 reached its end of
