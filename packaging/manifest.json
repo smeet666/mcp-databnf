@@ -2,7 +2,7 @@
   "manifest_version": "0.3",
   "name": "mcp-databnf",
   "display_name": "data.bnf.fr",
-  "version": "2.1.1",
+  "version": "2.1.2",
   "description": "MCP server for data.bnf.fr, the Bibliothèque nationale de France open catalogue. Look up authors, works, editions and the Gallica links attached to them. No API key required.",
   "long_description": "Ask the open catalogue of the Bibliothèque nationale de France about a person, a work, or the editions the library holds. Six read-only tools over its SPARQL endpoint: find who the BnF records under a name and which authority record is which, read the dates, places, occupation and the alignments to VIAF, IdRef, DBpedia, Wikidata and ISNI, find a work by words in its title, read its record, list the published editions with their imprints, and gather the links to what has been digitised. No API key, no account.\n\nTwo things shape what it will and will not say. The BnF licence asks for the source and the date of retrieval to be stated wherever the metadata are shown, so every answer carries both. And the BnF places its metadata and its digitised contents under two different regimes: Gallica addresses are returned as links for a person to open, and never requested.",
   "author": {
