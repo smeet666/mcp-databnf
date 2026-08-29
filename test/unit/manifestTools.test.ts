@@ -48,14 +48,15 @@ describe("what a host is told before the server runs", () => {
     expect(announced).toEqual(registered);
   });
 
-  it("carries the arguments each tool declares", () => {
-    // A directory reading the bundle validates a tool against this schema, and
-    // a schema kept by hand drifts from the one the server publishes.
-    for (const tool of tools) {
-      const declared = manifest.tools.find((each) => each.name === tool.name);
-      expect(declared?.inputSchema, `${tool.name} is announced without its arguments`).toEqual(
-        tool.inputSchema,
-      );
+  it("carries on a tool only what the bundle format defines", () => {
+    // The packer validates this file and refuses a key it does not know, so a
+    // field added here stops the release rather than the pull request. The
+    // argument schema a directory wants is added to a copy at deposit time.
+    for (const tool of manifest.tools) {
+      expect(
+        Object.keys(tool).sort(alphabetically),
+        `${tool.name} carries more than a line`,
+      ).toEqual(["description", "name"]);
     }
   });
 
