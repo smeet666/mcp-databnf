@@ -9,33 +9,36 @@
 [![Install in Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/en/install-mcp?name=databnf&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIm1jcC1kYXRhYm5mIl19)
 [![Install in VS Code](https://img.shields.io/badge/VS_Code-Install-0098FF?style=flat&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=databnf&config=%7B%22name%22%3A%22databnf%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22mcp-databnf%22%5D%7D)
 
-An MCP server for [data.bnf.fr](https://data.bnf.fr), the open catalogue of the
-Bibliothèque nationale de France. Look up an author, find a work, list the
-editions the BnF holds of it, list what a person wrote, and gather the links to
-what has been digitised.
+[data.bnf.fr](https://data.bnf.fr) is the open data service of the Bibliothèque
+nationale de France. It publishes the authority records the national library
+maintains: the people it catalogues, with their dates, their places, their
+languages and their fields of activity; the works they wrote, with the editions
+each work was published in; and the links to the copies digitised in Gallica. A
+record states whether the library considers it established or still provisional.
 
-No API key. No account. Read-only.
+This server connects a chat client to that service. You can search for an author
+or a work by name, read a record in full, list what an author wrote, list the
+editions of a work, and find the digitised copies attached to either. It needs no
+API key and no account.
+
+_[Version française](#mcp-databnf-français)_
 
 ---
 
-## What it is for
-
-The BnF publishes its authority file and its bibliographic records as linked
-data, and answers questions about them over SPARQL. That dataset knows things a
-web search does not: which of two people bearing one name wrote a given book,
-what the BnF recorded as somebody's date and place of death, which editions of a
-work exist and who printed them, and which of those have been digitised.
-
-This server asks those questions for you, in seven tools, and reports what the
-catalogue answers without adding to it.
-
 ## Install
 
+**One-click install**
+
+[![Install in Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/en/install-mcp?name=databnf&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIm1jcC1kYXRhYm5mIl19)
+[![Install in VS Code](https://img.shields.io/badge/VS_Code-Install-0098FF?style=flat&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=databnf&config=%7B%22name%22%3A%22databnf%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22mcp-databnf%22%5D%7D)
+
+**Claude Code**
+
 ```bash
-npx mcp-databnf
+claude mcp add databnf -- npx -y mcp-databnf
 ```
 
-### Claude Desktop, Claude Code, and other stdio clients
+**Claude Desktop, Cursor, and any client using the standard config format**
 
 ```json
 {
@@ -47,6 +50,8 @@ npx mcp-databnf
   }
 }
 ```
+
+Node 24 or later is required, and no environment variable has to be set.
 
 ### With Docker
 
@@ -61,223 +66,302 @@ npx mcp-databnf
 }
 ```
 
-`-i` keeps stdin open, which is where the protocol travels, and no `-t` is
-passed: a TTY rewrites the stream and breaks it. The container needs outbound
-HTTPS to `data.bnf.fr`, `catalogue.bnf.fr` and `isni.org`, and nothing else: no volume, no port, no environment variable, no credential.
+`-i` keeps stdin open, which is where the protocol travels, and `-t` is left out
+because a TTY rewrites the stream. The container needs outbound HTTPS to
+`data.bnf.fr`, and nothing else: no volume, no port, no credential.
 
-## The seven tools
+### Bundle, without npm
 
-| Tool             | Answers                                                                                                                   |
-| ---------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| `search_authors` | Who does the BnF record under this name, and which record is which                                                        |
-| `get_author`     | Dates, places, occupation, language, country, Dewey class, and the same person in VIAF, IdRef, DBpedia, Wikidata and ISNI |
-| `search_works`   | Which works have these words in their title                                                                               |
-| `get_work`       | Title, creators, date, language, form, subject, and whether the record is established or provisional                      |
-| `list_works`     | Which works the catalogue names a person the creator of, with the date and the form code it gives each                    |
-| `list_editions`  | Publisher, place, year, edition statement, extent, ISBN, catalogue link, and the Gallica link when there is one           |
-| `find_digitised` | Every digitised document the catalogue attaches to a person or a work, as links                                           |
+Download `mcp-databnf-2.0.0.mcpb` from
+[the latest release](https://github.com/smeet666/mcp-databnf/releases/latest) and
+open it. A client that supports MCP bundles installs it on its own, with no npm
+and no configuration file to edit. The bundle carries its dependencies, so
+nothing is fetched at install time.
 
-A typical exchange asks `search_authors` for a name, reads the rows, and passes
-one identifier to `get_author`, to `list_works`, or on to `list_editions`.
+## What you can ask
 
-## What it does not do, and why
+- « Que dit la BnF de Colette ? »
+- "List everything Marguerite Duras wrote."
+- "Which editions of that work does the library hold?"
+- "Are any of them digitised in Gallica?"
+- "When was that record last established?"
 
-**It never reads Gallica.** The BnF puts its metadata and its digitised contents
-under two different regimes. The metadata this server reads may be reused freely
-provided the source and the date of retrieval are stated. The contents on
-gallica.bnf.fr are governed separately: their terms make use inside an
-artificial-intelligence project subject to a paid licence outside academic
-research, and the site refuses ClaudeBot and GPTBot at the server, then bans the
-calling address after about fifteen requests whatever the pace.
+The ordinary path runs from a search to a record: a row carries an `id`, and
+`get_author` or `get_work` reads it.
 
-So a Gallica address is treated here as what the catalogue says it is: a piece of
-metadata, rendered as a link for a person to open. The server will tell you that
-a 1873 Brussels printing of _Une saison en enfer_ has been digitised and give you
-its address. It will not tell you what is on page four, whether the scan is
-complete, or whether the document opens at all. A `bnf-onto:OCR` link names a
-machine-read text of a document; the server reports that the text exists and
-leaves it where it is. A test fails if any address on that host is ever built to
-be called.
+## Tools
 
-**It does not rank.** The BnF's full-text index answers whether a title or a name
-carries the words asked for. It returns no measure of how well, so the rows come
-back in the order the index holds them. Searching for `saison enfer` returns a
-dozen studies of Rimbaud before Rimbaud, and every one of them is a correct
-match. This server says so rather than inventing an order the catalogue does not
-support, and it reports no total, because a total on a search that does not rank
-reads as a measure of relevance.
+| Tool             | What it does                                                  |
+| ---------------- | ------------------------------------------------------------- |
+| `search_authors` | Finds people by name in the authority records.                |
+| `get_author`     | Reads one person's record in full.                            |
+| `search_works`   | Finds works by title.                                         |
+| `get_work`       | Reads one work's record in full.                              |
+| `list_works`     | Lists the works one person is credited with.                  |
+| `list_editions`  | Lists the editions of one work.                               |
+| `find_digitised` | Finds the copies digitised in Gallica for a person or a work. |
 
-**A name is matched letter for letter, and only among the people.** The index
-compares the characters given against the characters a cataloguer entered, so
-`Dostoïevski`, `Dostoievski` and `Dostoevskij` are three searches reaching three
-different sets of records, and a handful of rows under one spelling is no
-evidence about the others. `search_authors` says so on every answer, and it reads
-the person records alone: an organisation or a conference is outside what it
-looked at, so an answer holding no row is never a statement that the authority
-file holds no such heading.
+### `search_authors`
 
-**A list of works is one link, not a bibliography.** `list_works` walks
-`dcterms:creator`, the statement that ties a work to the person who made it.
-That statement is real and it is partial. The catalogue credits a person on a
-record in other ways, and the BnF holds printed editions whose work it has never
-established as a record of its own, so a title missing from the list is not a
-title the person did not write. Every answer says so, and none of them reports a
-total: a count of what one link reaches would be read as a count of what somebody
-wrote.
+Finds people by name in the authority records.
 
-**A form code says what a work declares, and an empty one says nothing.** A work
-record points at a term of the BnF's work-form vocabulary, and this dataset
-publishes no label for those terms. So `roman`, `poesi` and `te` arrive as the
-codes they are: some read as words and some do not. The catalogue also states no
-form at all on a great many works, and that silence is a form unstated rather
-than a genre denied. Keeping the rows that carry one code therefore finds the
-works declaring it and never all the works of that form, which is why the codes
-are reported and no filter is offered on them.
+| Argument | Type                           | Required | What it does          |
+| -------- | ------------------------------ | -------- | --------------------- |
+| `name`   | string, 1 to 200 characters    | yes      | The name to look for. |
+| `limit`  | integer, 1 to 50, default `10` | no       | Rows to serve.        |
+| `page`   | integer, 1 to 100, default `1` | no       | Which page of rows.   |
 
-**It does not write biographies.** The field the BnF calls biographical
-information is an occupation on most records: Rimbaud's says _Poète_, and that is
-the whole of it. `get_author` returns that word and says what it is.
+**In return:** `authors`, each carrying `id`, which `get_author`, `list_works`
+and `find_digitised` take; `name` as the service writes it; `label`, the
+authority heading, usually with the dates; `birth_year` and `death_year`, `null`
+where the record states none; `role`; and `source_url`. `words_searched` says
+what was actually sent, `has_more` whether further pages exist, and
+`index_window_full` that the index served everything it will serve for this
+search.
 
-**It exposes no raw SPARQL tool.** An arbitrary query is an unbounded load on a
-service a public institution pays for, and nothing here would control what the
-caller wrote. Every query this server sends is one of ten written in advance.
+### `get_author`
 
-## The licence, and what it asks of you
+Reads one person's record in full.
+
+| Argument             | Type                        | Required | What it does                            |
+| -------------------- | --------------------------- | -------- | --------------------------------------- |
+| `author_id`          | string, 1 to 200 characters | yes      | The identifier a row carries.           |
+| `include_depictions` | boolean, default `false`    | no       | Add the portraits the record points to. |
+
+**In return:** the person with `name`, `label`, `given_name`, `family_name`,
+`other_names`, `birth_date` and `death_date` as published, `birth_year` and
+`death_year` as numbers, `birth_place`, `death_place`,
+`biographical_information`, `occupation`, `languages` as ISO 639-2 codes,
+`countries` and `fields` in the words of the record. A field the record leaves
+empty is `null`.
+
+### `search_works`
+
+Finds works by title.
+
+| Argument | Type                           | Required | What it does                        |
+| -------- | ------------------------------ | -------- | ----------------------------------- |
+| `title`  | string, 1 to 200 characters    | yes      | The words of the title to look for. |
+| `limit`  | integer, 1 to 50, default `10` | no       | Rows to serve.                      |
+| `page`   | integer, 1 to 100, default `1` | no       | Which page of rows.                 |
+
+**In return:** `works`, each carrying `id`, which `get_work`, `list_editions` and
+`find_digitised` take; `title`; `date`, the year the record gives the work, as
+published; `creators`; `status`, reading `established` or `provisional`; and
+`source_url`. The envelope carries the same `words_searched`, `has_more` and
+`index_window_full` a search of people returns.
+
+### `get_work`
+
+Reads one work's record in full.
+
+| Argument             | Type                        | Required | What it does                                |
+| -------------------- | --------------------------- | -------- | ------------------------------------------- |
+| `work_id`            | string, 1 to 200 characters | yes      | The identifier a row carries.               |
+| `include_depictions` | boolean, default `false`    | no       | Add the illustrations the record points to. |
+
+**In return:** the work with `title`, `label`, `date` as published, `first_year`,
+`creators` as `{ id, name }`, `languages`, `forms`, `subjects` and
+`dewey_classes` in the words of the record, `expression_count`, `same_as` for the
+registers the BnF aligns it with, and `catalogue_url`. `status` reads
+`established` or `provisional`, and `status_statement` says what the library
+means by it: a provisional record is one the library has not finished checking.
+
+### `list_works`
+
+Lists the works one person is credited with.
+
+| Argument    | Type                           | Required | What it does             |
+| ----------- | ------------------------------ | -------- | ------------------------ |
+| `author_id` | string, 1 to 200 characters    | yes      | The person's identifier. |
+| `limit`     | integer, 1 to 50, default `10` | no       | Rows to serve.           |
+| `page`      | integer, 1 to 100, default `1` | no       | Which page of rows.      |
+
+**In return:** `works`, each carrying `id`, `title`, `date` as published, `year`
+as a number where the record has one, `forms`, `status` and `source_url`, with
+`has_more` to continue.
+
+### `list_editions`
+
+Lists the editions of one work.
+
+| Argument  | Type                           | Required | What it does           |
+| --------- | ------------------------------ | -------- | ---------------------- |
+| `work_id` | string, 1 to 200 characters    | yes      | The work's identifier. |
+| `limit`   | integer, 1 to 50, default `10` | no       | Rows to serve.         |
+| `page`    | integer, 1 to 100, default `1` | no       | Which page of rows.    |
+
+**In return:** `editions`, each carrying its own `id` in the BnF catalogue, the
+`title` this edition bears, `date` and `year`, `publisher`, `place`,
+`edition_statement`, `extent`, `isbn`, `note` as the cataloguer wrote it,
+`catalogue_url`, `digitised` and `source_url`. A field the record leaves empty is
+`null`.
+
+### `find_digitised`
+
+Finds the copies digitised in Gallica attached to a person or a work.
+
+| Argument | Type                                       | Required | What it does                             |
+| -------- | ------------------------------------------ | -------- | ---------------------------------------- |
+| `id`     | string, 1 to 200 characters                | yes      | The identifier of a person or of a work. |
+| `kind`   | `auto`, `person` or `work`, default `auto` | no       | What the identifier stands for.          |
+| `limit`  | integer, 1 to 200, default `40`            | no       | Links to serve.                          |
+
+**In return:** `kind`, saying what the catalogue types the record as, and `links`,
+each carrying the Gallica `ark`, its `url`, its `rendering` and the `role` the
+person holds on it. `links_returned_by_role` counts them per role. This server
+describes a digitised document and never opens one.
+
+## Established and provisional records
+
+A record carries a `status`. `established` means the library has checked it;
+`provisional` means it has not finished, and `status_statement` says so in the
+library's own words. Report the status alongside anything taken from a
+provisional record.
+
+## The licence, and what it asks
 
 The BnF states one condition on these metadata:
 
 > L'utilisation de ces métadonnées est libre et gratuite sous réserve du maintien
 > de la mention de leur source et de l'indication de leur date de récupération.
 
-Use is free of charge, provided the source is named **and the date of retrieval
-is stated**. That second half is a design constraint:
-every answer this server produces carries `retrieved_at` in its payload and ends
-its text block with the source and that date. A cached answer reports the moment
-it was originally read, since that is the date it was retrieved. Repeat both
-wherever you show what you got.
+Use is free of charge, provided the source is named and the date of retrieval is
+stated. Every answer carries `retrieved_at` in its payload and ends its text with
+the source and that date. A cached answer reports the moment it was originally
+read, since that is when it was retrieved. Repeat both wherever what you got is
+shown.
 
-## How it treats the service
+## Configuration
 
-data.bnf.fr is a query service a public institution runs at its own cost, and a
-SPARQL query is a more expensive request than fetching a page.
+Every variable is optional. Set them in the `env` block of your client config.
 
-- One request at a time, never in parallel.
-- At least three seconds between two of them. Configuration can widen that and
-  cannot narrow it, including through the published client entry point.
-- The `User-Agent` always carries the project identifier and an address where a
-  person can be reached, whatever a caller sets.
-- Answers are cached in memory for fifteen minutes, so a conversation that walks
-  back over one author does not ask twice.
+| Variable                | Default              | What it does                                                                      |
+| ----------------------- | -------------------- | --------------------------------------------------------------------------------- |
+| `BNF_USER_AGENT`        | the project identity | Names your application to the BnF, with an address where a person can be reached. |
+| `BNF_MIN_INTERVAL_MS`   | `3000`               | Gap between two requests, from 3000 to 120000.                                    |
+| `BNF_TIMEOUT_MS`        | `60000`              | Deadline for one request, from 1000 to 300000.                                    |
+| `BNF_MAX_RETRIES`       | `3`                  | Attempts after a transient failure, from 0 to 8.                                  |
+| `BNF_CACHE_TTL_MS`      | `900000`             | How long an answer stays in memory, from 0 to 86400000.                           |
+| `BNF_CACHE_MAX_ENTRIES` | `200`                | Answers held in memory at once, from 1 to 5000.                                   |
+| `BNF_LOG_LEVEL`         | `error`              | `silent`, `error`, `info` or `debug`, written to stderr.                          |
 
-The BnF publishes no rate for this endpoint. It publishes `Crawl-delay: 5` on its
-other host and enforces it there, which is the only figure it has stated about
-how fast it wants to be read, and the floor here was set with that in mind.
-
-## Settings
-
-Every one is optional.
-
-| Variable                | Default  | Meaning                                                                                             |
-| ----------------------- | -------- | --------------------------------------------------------------------------------------------------- |
-| `BNF_USER_AGENT`        | none     | Identify your own client. The project identifier is appended, so the BnF can always reach a person. |
-| `BNF_MIN_INTERVAL_MS`   | `3000`   | Milliseconds between requests. The floor is 3000 and cannot be lowered.                             |
-| `BNF_TIMEOUT_MS`        | `60000`  | Deadline for one query.                                                                             |
-| `BNF_MAX_RETRIES`       | `3`      | Attempts after a busy answer.                                                                       |
-| `BNF_CACHE_TTL_MS`      | `900000` | How long an answer is kept. `0` turns the cache off.                                                |
-| `BNF_CACHE_MAX_ENTRIES` | `200`    | How many answers are kept.                                                                          |
-| `BNF_LOG_LEVEL`         | `error`  | `silent`, `error`, `info` or `debug`. Logs go to stderr.                                            |
-
-A value that cannot be read is refused, named on stderr, and the default stands.
-The setting is not clamped: clamping would let you believe a value took effect
-when it did not.
+A value outside its range falls back to the default, and the reason is written to
+stderr.
 
 ## Errors
 
-| Code            | Means                                                       |
-| --------------- | ----------------------------------------------------------- |
-| `not_found`     | The endpoint answered, and the BnF describes no such record |
-| `invalid_input` | The request was refused rather than answered                |
-| `rate_limited`  | The endpoint asked this client to slow down                 |
-| `parse_failure` | The answer arrived in a shape this client cannot read       |
-| `network_error` | The request did not complete                                |
-| `timeout`       | The query exceeded its deadline, or the endpoint gave it up |
+Every failure carries one of six codes, a message, and where it helps a hint
+naming the next move.
 
-`rate_limited` never means the record is missing. Neither does `timeout`: the
-endpoint answers 200 with an empty body when it abandons a query part way
-through, and this server calls that a failure to read rather than an absence,
-because the two look identical and mean opposite things.
+| Code            | What happened                                           | What to do                                                                                                   |
+| --------------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| `not_found`     | The service answered, and holds no such record.         | Check the identifier with `search_authors` or `search_works`.                                                |
+| `invalid_input` | The arguments were refused before any request went out. | Read the message, which names the argument.                                                                  |
+| `rate_limited`  | The service asked this client to slow down.             | Wait the number of seconds the hint names and call again with the same arguments. The record is still there. |
+| `parse_failure` | The answer arrived in a shape this client cannot read.  | Report it at [the issue tracker](https://github.com/smeet666/mcp-databnf/issues).                            |
+| `network_error` | The request did not complete.                           | Try again shortly.                                                                                           |
+| `timeout`       | The request passed its deadline.                        | Raise `BNF_TIMEOUT_MS`, or ask for fewer rows.                                                               |
 
-## Using the access layer on its own
+## As a library
 
-The lower layer imports nothing from the MCP protocol and is published under the
-`./client` subpath, with its pacing, its cache and its error taxonomy attached.
+The layer reading the service is published on its own, with its pacing, its cache
+and its errors, and with no protocol attached.
 
 ```ts
 import { BnfClient } from "mcp-databnf/client";
 
 const client = new BnfClient();
-const { data, retrievedAt } = await client.searchAuthors("Rimbaud", 10, 0);
-for (const author of data.rows) console.log(author.id, author.name, author.birthYear);
-console.log("retrieved", retrievedAt);
+const { data, cached } = await client.getAuthor("cb11907966z");
+console.log(data.label, cached);
 ```
+
+`getAuthor` and `getWork` each answer `{ data, cached }`, and throw an error
+carrying one of the six codes. The three-second floor between two requests holds
+here as well.
+
+## Pacing and attribution
+
+Requests go out one at a time with at least three seconds between them, and that
+floor holds however the server is configured. Each question is answered by a
+SPARQL query against a public endpoint the BnF runs at its own expense, which is
+why the interval is wide and the deadline long. The `User-Agent` always ends with
+the project identity and an address where a person can be reached.
+
+Every answer carries the source and `retrieved_at`, which the licence asks to be
+stated wherever the metadata are shown.
+
+This MCP server is an unofficial project, with no affiliation to the
+Bibliothèque nationale de France.
+
+## Privacy
+
+This server collects nothing about you and sends nothing to its author. It runs
+on your machine, contacts `data.bnf.fr` and nothing else, holds its answers in memory
+while it runs, and writes nothing to disk.
+[PRIVACY.md](PRIVACY.md) states what a request carries and which settings change
+any of it.
 
 ## Development
 
 ```bash
 npm install
-npm test          # unit tests, against generated fixtures, no network
-npm run typecheck
-npm run build
-BNF_LIVE=1 npm run test:live   # one real query per route
+npm run build:fixtures
+npm test
+npm run check
 ```
 
-The unit tests reach no network. Fixtures are generated by
-`scripts/build-fixtures.mjs` from invented records, so no BnF content lives in
-this repository and every test is reproducible. The live suite runs nightly as a
-canary, and it is the only thing that would notice the day the catalogue changes
-shape.
+Tests run against generated fixtures and make no network request. The live suite,
+`npm run test:live`, makes one request per route and runs nightly against the
+service itself.
 
 ## Contributing
 
-[CONTRIBUTING.md](CONTRIBUTING.md). Reports of a wrong answer are the most useful
-kind: say what you asked, what came back, and what the record actually holds.
+Bugs, questions and ideas belong in
+[the issue tracker](https://github.com/smeet666/mcp-databnf/issues). Pull
+requests are welcome; opening an issue first helps agree on the shape of the
+change. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Licence
+## License
 
-MIT for this code. See [LICENSE](LICENSE).
-
-The metadata belong to the Bibliothèque nationale de France and are published
-under the condition quoted above: name the source, and state the date of
-retrieval.
+MIT, see [LICENSE](LICENSE). The metadata belong to the Bibliothèque nationale de
+France, free to use provided the source and the date of retrieval are stated.
 
 ---
 
+<a name="mcp-databnf-français"></a>
+
 # mcp-databnf (français)
 
-Un serveur MCP pour [data.bnf.fr](https://data.bnf.fr), le catalogue ouvert de la
-Bibliothèque nationale de France. Chercher un auteur, trouver une œuvre, lister
-les éditions que la BnF en conserve, lister ce qu'une personne a écrit, et
-rassembler les liens vers ce qui a été numérisé.
+_[English version](#mcp-databnf)_
 
-Sans clé d'API. Sans compte. En lecture seule.
+[data.bnf.fr](https://data.bnf.fr) est le service de données ouvertes de la
+Bibliothèque nationale de France. Il publie les notices d'autorité que la
+bibliothèque nationale entretient : les personnes qu'elle catalogue, avec leurs
+dates, leurs lieux, leurs langues et leurs domaines d'activité ; les œuvres
+qu'elles ont écrites, avec les éditions dans lesquelles chaque œuvre a paru ; et
+les liens vers les exemplaires numérisés dans Gallica. Une notice indique si la
+bibliothèque la tient pour établie ou encore provisoire.
 
-## À quoi il sert
-
-La BnF publie son fichier d'autorité et ses notices bibliographiques en données
-liées, et répond aux questions qu'on lui pose en SPARQL. Ce jeu de données sait
-des choses qu'une recherche sur le web ignore : lequel de deux homonymes a écrit
-tel livre, ce que la BnF a enregistré comme date et lieu de mort de quelqu'un,
-quelles éditions d'une œuvre existent et qui les a imprimées, et lesquelles ont
-été numérisées.
-
-Ce serveur pose ces questions pour vous, en sept outils, et rapporte ce que le
-catalogue répond sans y ajouter.
+Ce serveur relie un client de conversation à ce service. On peut y chercher un
+auteur ou une œuvre par son nom, lire une notice en entier, lister ce qu'un
+auteur a écrit, lister les éditions d'une œuvre, et trouver les exemplaires
+numérisés attachés à l'un ou l'autre. Aucune clé d'API, aucun compte.
 
 ## Installation
 
+**Installation en un clic**
+
+[![Install in Cursor](https://cursor.com/deeplink/mcp-install-dark.svg)](https://cursor.com/en/install-mcp?name=databnf&config=eyJjb21tYW5kIjoibnB4IiwiYXJncyI6WyIteSIsIm1jcC1kYXRhYm5mIl19)
+[![Install in VS Code](https://img.shields.io/badge/VS_Code-Install-0098FF?style=flat&logo=visualstudiocode&logoColor=white)](https://insiders.vscode.dev/redirect/mcp/install?name=databnf&config=%7B%22name%22%3A%22databnf%22%2C%22command%22%3A%22npx%22%2C%22args%22%3A%5B%22-y%22%2C%22mcp-databnf%22%5D%7D)
+
+**Claude Code**
+
 ```bash
-npx mcp-databnf
+claude mcp add databnf -- npx -y mcp-databnf
 ```
+
+**Claude Desktop, Cursor, et tout client au format de configuration standard**
 
 ```json
 {
@@ -289,6 +373,9 @@ npx mcp-databnf
   }
 }
 ```
+
+Node 24 ou plus récent est nécessaire, et aucune variable d'environnement n'est à
+renseigner.
 
 ### Avec Docker
 
@@ -303,131 +390,266 @@ npx mcp-databnf
 }
 ```
 
-`-i` garde l'entrée standard ouverte, qui est le canal du protocole, et aucun
-`-t` n'est passé : un terminal réécrit le flux et le casse. Le conteneur a besoin
-d'un accès HTTPS sortant vers `data.bnf.fr`, `catalogue.bnf.fr` et `isni.org`, et de rien d'autre :
-aucun volume, aucun port, aucune variable d'environnement, aucun identifiant.
+`-i` garde l'entrée standard ouverte, qui est le canal du protocole, et `-t` est
+omis parce qu'un TTY réécrit le flux. Le conteneur a besoin d'un accès HTTPS
+sortant vers `data.bnf.fr`, et de rien d'autre : aucun volume, aucun port, aucun
+identifiant.
 
-## Les sept outils
+### Bundle, sans npm
 
-| Outil            | Répond à                                                                                                               |
-| ---------------- | ---------------------------------------------------------------------------------------------------------------------- |
-| `search_authors` | Qui la BnF enregistre sous ce nom, et quelle notice est laquelle                                                       |
-| `get_author`     | Dates, lieux, profession, langue, pays, indice Dewey, et la même personne dans VIAF, IdRef, DBpedia, Wikidata et ISNI  |
-| `search_works`   | Quelles œuvres portent ces mots dans leur titre                                                                        |
-| `get_work`       | Titre, auteurs, date, langue, forme, sujet, et si la notice est établie ou provisoire                                  |
-| `list_works`     | Quelles œuvres le catalogue attribue à une personne comme créatrice, avec la date et le code de forme qu'il leur donne |
-| `list_editions`  | Éditeur, lieu, année, mention d'édition, pagination, ISBN, lien catalogue, et le lien Gallica quand il existe          |
-| `find_digitised` | Tous les documents numérisés que le catalogue rattache à une personne ou à une œuvre, sous forme de liens              |
+Téléchargez `mcp-databnf-2.0.0.mcpb` depuis
+[la dernière publication](https://github.com/smeet666/mcp-databnf/releases/latest)
+et ouvrez-le. Un client qui gère les bundles MCP l'installe seul, sans npm et
+sans fichier de configuration à modifier. Le bundle emporte ses dépendances, donc
+rien n'est téléchargé à l'installation.
 
-## Ce qu'il ne fait pas, et pourquoi
+## Ce qu'on peut demander
 
-**Il ne lit jamais Gallica.** La BnF place ses métadonnées et ses contenus
-numérisés sous deux régimes différents. Les métadonnées lues ici sont
-réutilisables librement à condition d'en citer la source et la date de
-récupération. Les contenus de gallica.bnf.fr relèvent d'un autre régime : leurs
-conditions soumettent l'usage dans un projet d'intelligence artificielle à une
-licence payante hors recherche académique, et le site refuse ClaudeBot et GPTBot
-au niveau du serveur, puis bannit l'adresse appelante après une quinzaine de
-requêtes, quel que soit le rythme.
+- « Que dit la BnF de Colette ? »
+- « Liste tout ce qu'a écrit Marguerite Duras. »
+- « Quelles éditions de cette œuvre la bibliothèque conserve-t-elle ? »
+- « Y en a-t-il de numérisées dans Gallica ? »
+- « Cette notice est-elle établie ou provisoire ? »
 
-Une adresse Gallica est donc traitée ici pour ce que le catalogue en dit : une
-métadonnée, rendue comme un lien qu'une personne ouvrira. Le serveur vous dira
-qu'un tirage bruxellois de 1873 d'_Une saison en enfer_ a été numérisé et vous en
-donnera l'adresse. Il ne vous dira pas ce qu'il y a page quatre, si la
-numérisation est complète, ni si le document s'ouvre. Un lien `bnf-onto:OCR`
-désigne un texte océrisé : le serveur signale qu'il existe et le laisse où il
-est. Un test échoue si une adresse sur cet hôte est un jour construite pour être
-appelée.
+Le chemin ordinaire va d'une recherche à une notice : une ligne porte un `id`, et
+`get_author` ou `get_work` la lit.
 
-**Il ne classe pas.** L'index plein texte de la BnF répond si un titre ou un nom
-porte les mots demandés. Il ne rend aucune mesure de pertinence, donc les lignes
-arrivent dans l'ordre de l'index. Chercher `saison enfer` rend une douzaine
-d'études sur Rimbaud avant Rimbaud, et chacune est une correspondance correcte.
-Ce serveur le dit, plutôt que d'inventer un ordre que le catalogue ne porte pas,
-et il ne rapporte aucun total : sur une recherche qui ne classe pas, un total se
-lit comme une mesure de pertinence.
+## Les outils
 
-**Un nom est apparié lettre à lettre, et seulement parmi les personnes.**
-L'index compare les caractères donnés à ceux qu'un catalogueur a saisis :
-`Dostoïevski`, `Dostoievski` et `Dostoevskij` sont donc trois recherches qui
-atteignent trois ensembles de notices différents, et quelques lignes obtenues
-sous une graphie ne disent rien des autres. `search_authors` l'énonce sur chaque
-réponse, et il ne lit que les notices de personnes : un organisme ou un congrès
-est hors de ce qu'il a regardé, si bien qu'une réponse sans ligne n'affirme
-jamais que le fichier d'autorité ne tient pas une telle vedette.
+| Outil            | Ce qu'il fait                                                                |
+| ---------------- | ---------------------------------------------------------------------------- |
+| `search_authors` | Trouve des personnes par leur nom dans les notices d'autorité.               |
+| `get_author`     | Lit la notice d'une personne en entier.                                      |
+| `search_works`   | Trouve des œuvres par leur titre.                                            |
+| `get_work`       | Lit la notice d'une œuvre en entier.                                         |
+| `list_works`     | Liste les œuvres attribuées à une personne.                                  |
+| `list_editions`  | Liste les éditions d'une œuvre.                                              |
+| `find_digitised` | Trouve les exemplaires numérisés dans Gallica d'une personne ou d'une œuvre. |
 
-**Une liste d'œuvres est un lien, pas une bibliographie.** `list_works` suit
-`dcterms:creator`, l'énoncé qui rattache une œuvre à qui l'a faite. Cet énoncé
-est réel et il est partiel : le catalogue crédite une personne sur une notice par
-d'autres voies, et la BnF conserve des éditions imprimées dont l'œuvre n'a jamais
-été établie comme notice à part entière. Un titre absent de la liste n'est donc
-pas un titre que la personne n'a pas écrit. Chaque réponse le dit, et aucune ne
-rapporte de total : un compte de ce qu'un seul lien atteint se lirait comme un
-compte de ce que quelqu'un a écrit.
+### `search_authors`
 
-**Un code de forme dit ce qu'une œuvre déclare ; son absence ne dit rien.** Une
-notice d'œuvre pointe vers un terme du vocabulaire des formes d'œuvre de la BnF,
-et ce jeu de données n'en publie aucun libellé. `roman`, `poesi` et `te`
-arrivent donc tels quels : certains se lisent comme des mots, d'autres non. Le
-catalogue n'énonce par ailleurs aucune forme sur quantité d'œuvres, et ce
-silence est une forme non déclarée, pas un genre exclu. Garder les lignes qui
-portent un code trouve donc les œuvres qui le déclarent, jamais toutes les
-œuvres de cette forme : les codes sont rapportés, et aucun filtre n'est offert
-dessus.
+Trouve des personnes par leur nom dans les notices d'autorité.
 
-**Il n'écrit pas de biographies.** Le champ que la BnF appelle information
-biographique contient une profession sur la plupart des notices : celle de
-Rimbaud dit _Poète_, et c'est tout. `get_author` rend ce mot et dit ce que c'est.
+| Argument | Type                        | Requis | Ce qu'il fait          |
+| -------- | --------------------------- | ------ | ---------------------- |
+| `name`   | chaîne, 1 à 200 caractères  | oui    | Le nom cherché.        |
+| `limit`  | entier, 1 à 50, défaut `10` | non    | Lignes à servir.       |
+| `page`   | entier, 1 à 100, défaut `1` | non    | Quelle page de lignes. |
 
-**Il n'expose aucun outil SPARQL brut.** Une requête arbitraire est une charge
-non bornée sur un service qu'une institution publique paie, et rien ici ne
-contrôlerait ce que l'appelant a écrit. Chacune des requêtes envoyées est l'une
-des dix écrites à l'avance.
+**En retour :** `authors`, chacun portant `id`, que `get_author`, `list_works` et
+`find_digitised` reprennent ; `name` tel que le service l'écrit ; `label`, la
+vedette d'autorité, généralement avec les dates ; `birth_year` et `death_year`,
+`null` là où la notice n'en indique pas ; `role` ; et `source_url`.
+`words_searched` dit ce qui a réellement été envoyé, `has_more` s'il existe
+d'autres pages, et `index_window_full` que l'index a servi tout ce qu'il servira
+pour cette recherche.
 
-## La licence, et ce qu'elle vous demande
+### `get_author`
 
-La BnF pose une condition :
+Lit la notice d'une personne en entier.
+
+| Argument             | Type                       | Requis | Ce qu'il fait                                        |
+| -------------------- | -------------------------- | ------ | ---------------------------------------------------- |
+| `author_id`          | chaîne, 1 à 200 caractères | oui    | L'identifiant que porte une ligne.                   |
+| `include_depictions` | booléen, défaut `false`    | non    | Ajoute les portraits vers lesquels la notice pointe. |
+
+**En retour :** la personne avec `name`, `label`, `given_name`, `family_name`,
+`other_names`, `birth_date` et `death_date` tels que publiés, `birth_year` et
+`death_year` en nombres, `birth_place`, `death_place`,
+`biographical_information`, `occupation`, `languages` en codes ISO 639-2,
+`countries` et `fields` dans les mots de la notice. Un champ que la notice laisse
+vide vaut `null`.
+
+### `search_works`
+
+Trouve des œuvres par leur titre.
+
+| Argument | Type                        | Requis | Ce qu'il fait              |
+| -------- | --------------------------- | ------ | -------------------------- |
+| `title`  | chaîne, 1 à 200 caractères  | oui    | Les mots du titre cherché. |
+| `limit`  | entier, 1 à 50, défaut `10` | non    | Lignes à servir.           |
+| `page`   | entier, 1 à 100, défaut `1` | non    | Quelle page de lignes.     |
+
+**En retour :** `works`, chacune portant `id`, que `get_work`, `list_editions` et
+`find_digitised` reprennent ; `title` ; `date`, l'année que la notice donne à
+l'œuvre, telle que publiée ; `creators` ; `status`, valant `established` ou
+`provisional` ; et `source_url`. L'enveloppe porte les mêmes `words_searched`,
+`has_more` et `index_window_full` qu'une recherche de personnes.
+
+### `get_work`
+
+Lit la notice d'une œuvre en entier.
+
+| Argument             | Type                       | Requis | Ce qu'il fait                                              |
+| -------------------- | -------------------------- | ------ | ---------------------------------------------------------- |
+| `work_id`            | chaîne, 1 à 200 caractères | oui    | L'identifiant que porte une ligne.                         |
+| `include_depictions` | booléen, défaut `false`    | non    | Ajoute les illustrations vers lesquelles la notice pointe. |
+
+**En retour :** l'œuvre avec `title`, `label`, `date` telle que publiée,
+`first_year`, `creators` en `{ id, name }`, `languages`, `forms`, `subjects` et
+`dewey_classes` dans les mots de la notice, `expression_count`, `same_as` pour
+les registres auxquels la BnF l'aligne, et `catalogue_url`. `status` vaut
+`established` ou `provisional`, et `status_statement` dit ce que la bibliothèque
+entend par là : une notice provisoire est une notice qu'elle n'a pas fini de
+vérifier.
+
+### `list_works`
+
+Liste les œuvres attribuées à une personne.
+
+| Argument    | Type                        | Requis | Ce qu'il fait                 |
+| ----------- | --------------------------- | ------ | ----------------------------- |
+| `author_id` | chaîne, 1 à 200 caractères  | oui    | L'identifiant de la personne. |
+| `limit`     | entier, 1 à 50, défaut `10` | non    | Lignes à servir.              |
+| `page`      | entier, 1 à 100, défaut `1` | non    | Quelle page de lignes.        |
+
+**En retour :** `works`, chacune portant `id`, `title`, `date` telle que publiée,
+`year` en nombre quand la notice en a un, `forms`, `status` et `source_url`, avec
+`has_more` pour poursuivre.
+
+### `list_editions`
+
+Liste les éditions d'une œuvre.
+
+| Argument  | Type                        | Requis | Ce qu'il fait             |
+| --------- | --------------------------- | ------ | ------------------------- |
+| `work_id` | chaîne, 1 à 200 caractères  | oui    | L'identifiant de l'œuvre. |
+| `limit`   | entier, 1 à 50, défaut `10` | non    | Lignes à servir.          |
+| `page`    | entier, 1 à 100, défaut `1` | non    | Quelle page de lignes.    |
+
+**En retour :** `editions`, chacune portant son propre `id` au catalogue de la
+BnF, le `title` que cette édition porte, `date` et `year`, `publisher`, `place`,
+`edition_statement`, `extent`, `isbn`, `note` telle que le catalogueur l'a
+écrite, `catalogue_url`, `digitised` et `source_url`. Un champ que la notice
+laisse vide vaut `null`.
+
+### `find_digitised`
+
+Trouve les exemplaires numérisés dans Gallica attachés à une personne ou à une
+œuvre.
+
+| Argument | Type                                      | Requis | Ce qu'il fait                                |
+| -------- | ----------------------------------------- | ------ | -------------------------------------------- |
+| `id`     | chaîne, 1 à 200 caractères                | oui    | L'identifiant d'une personne ou d'une œuvre. |
+| `kind`   | `auto`, `person` ou `work`, défaut `auto` | non    | Ce que l'identifiant désigne.                |
+| `limit`  | entier, 1 à 200, défaut `40`              | non    | Liens à servir.                              |
+
+**En retour :** `kind`, qui dit de quel type le catalogue tient la notice, et
+`links`, chacun portant l'`ark` Gallica, son `url`, son `rendering` et le `role`
+que la personne y tient. `links_returned_by_role` les compte par rôle. Ce serveur
+décrit un document numérisé et n'en ouvre jamais aucun.
+
+## Notices établies et provisoires
+
+Une notice porte un `status`. `established` signifie que la bibliothèque l'a
+vérifiée ; `provisional` qu'elle ne l'a pas terminée, et `status_statement` le
+dit dans ses propres mots. Rapportez ce statut à côté de tout ce qui vient d'une
+notice provisoire.
+
+## La licence, et ce qu'elle demande
+
+La BnF pose une condition sur ces métadonnées :
 
 > L'utilisation de ces métadonnées est libre et gratuite sous réserve du maintien
 > de la mention de leur source et de l'indication de leur date de récupération.
 
-La date de récupération est une contrainte de conception : chaque réponse porte `retrieved_at` dans sa charge structurée et termine
-son bloc de texte par la source et cette date. Une réponse servie depuis le cache
-rapporte le moment où elle a été lue la première fois, puisque c'est là qu'elle a
-été récupérée. Reprenez les deux partout où vous montrez ce que vous avez obtenu.
+Chaque réponse porte `retrieved_at` dans sa charge utile et termine son texte par
+la source et cette date. Une réponse servie depuis le cache rapporte le moment où
+elle a été lue à l'origine, puisque c'est sa date de récupération. Redonnez les
+deux partout où ce que vous avez obtenu est montré.
 
-## Le rythme
+## Configuration
 
-Une requête à la fois, jamais en parallèle. Au moins trois secondes entre deux
-requêtes : la configuration peut élargir cet intervalle et ne peut pas le
-réduire, y compris par le point d'entrée `client` publié. Le `User-Agent` porte
-toujours l'identifiant du projet et une adresse où joindre une personne. Les
-réponses sont gardées quinze minutes en mémoire.
+Chaque variable est facultative. Elles se posent dans le bloc `env` de la
+configuration du client.
 
-La BnF ne publie aucune limite pour ce point d'accès. Elle publie `Crawl-delay: 5`
-sur son autre hôte et l'y fait respecter, ce qui est le seul chiffre qu'elle ait
-énoncé sur la vitesse à laquelle elle veut être lue.
+| Variable                | Défaut               | Ce qu'elle fait                                                                     |
+| ----------------------- | -------------------- | ----------------------------------------------------------------------------------- |
+| `BNF_USER_AGENT`        | l'identité du projet | Nomme votre application auprès de la BnF, avec une adresse où joindre une personne. |
+| `BNF_MIN_INTERVAL_MS`   | `3000`               | Écart entre deux requêtes, de 3000 à 120000.                                        |
+| `BNF_TIMEOUT_MS`        | `60000`              | Délai d'une requête, de 1000 à 300000.                                              |
+| `BNF_MAX_RETRIES`       | `3`                  | Tentatives après un échec passager, de 0 à 8.                                       |
+| `BNF_CACHE_TTL_MS`      | `900000`             | Durée pendant laquelle une réponse reste en mémoire, de 0 à 86400000.               |
+| `BNF_CACHE_MAX_ENTRIES` | `200`                | Réponses gardées en mémoire à la fois, de 1 à 5000.                                 |
+| `BNF_LOG_LEVEL`         | `error`              | `silent`, `error`, `info` ou `debug`, écrit sur la sortie d'erreur.                 |
 
-## Réglages
-
-Tous facultatifs : `BNF_USER_AGENT`, `BNF_MIN_INTERVAL_MS` (3000, plancher
-infranchissable), `BNF_TIMEOUT_MS` (60000), `BNF_MAX_RETRIES` (3),
-`BNF_CACHE_TTL_MS` (900000), `BNF_CACHE_MAX_ENTRIES` (200), `BNF_LOG_LEVEL`
-(`error`). Une valeur illisible est refusée, signalée sur stderr, et la valeur
-par défaut s'applique.
+Une valeur hors de sa plage retombe sur le défaut, et la raison est écrite sur la
+sortie d'erreur.
 
 ## Erreurs
 
-`not_found`, `invalid_input`, `rate_limited`, `parse_failure`, `network_error`,
-`timeout`. `rate_limited` ne veut jamais dire que la notice est absente.
-`timeout` non plus : le point d'accès répond 200 avec un corps vide quand il
-abandonne une requête en cours de route, et ce serveur appelle cela un échec de
-lecture plutôt qu'une absence, parce que les deux se ressemblent et veulent dire
-le contraire.
+Chaque échec porte un des six codes, un message, et quand cela aide une
+indication du geste suivant.
+
+| Code            | Ce qui s'est passé                                   | Que faire                                                                                        |
+| --------------- | ---------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| `not_found`     | Le service a répondu, et n'a pas cette notice.       | Vérifiez l'identifiant avec `search_authors` ou `search_works`.                                  |
+| `invalid_input` | Les arguments ont été refusés avant toute requête.   | Lisez le message, qui nomme l'argument.                                                          |
+| `rate_limited`  | Le service demande à ce client de ralentir.          | Attendez les secondes indiquées et rappelez avec les mêmes arguments. La notice est toujours là. |
+| `parse_failure` | La réponse est arrivée dans une forme illisible ici. | Signalez-le sur [le suivi d'incidents](https://github.com/smeet666/mcp-databnf/issues).          |
+| `network_error` | La requête n'a pas abouti.                           | Réessayez sous peu.                                                                              |
+| `timeout`       | La requête a dépassé son délai.                      | Augmentez `BNF_TIMEOUT_MS`, ou demandez moins de lignes.                                         |
+
+## Comme bibliothèque
+
+La couche qui lit le service est publiée seule, avec son rythme, son cache et ses
+erreurs, sans protocole attaché.
+
+```ts
+import { BnfClient } from "mcp-databnf/client";
+
+const client = new BnfClient();
+const { data, cached } = await client.getAuthor("cb11907966z");
+console.log(data.label, cached);
+```
+
+`getAuthor` et `getWork` répondent chacun `{ data, cached }`, et lèvent une
+erreur portant un des six codes. Le plancher de trois secondes entre deux
+requêtes tient également ici.
+
+## Rythme et attribution
+
+Les requêtes partent une à une avec au moins trois secondes entre elles, et ce
+plancher tient quelle que soit la configuration. Chaque question se résout par
+une requête SPARQL contre un point d'accès public que la BnF fait tourner à ses
+frais, d'où un intervalle large et un délai long. Le `User-Agent` se termine
+toujours par l'identité du projet et une adresse où joindre une personne.
+
+Chaque réponse porte la source et `retrieved_at`, que la licence demande
+d'indiquer partout où les métadonnées sont montrées.
+
+Ce MCP est un projet non officiel, sans affiliation à la Bibliothèque nationale
+de France.
+
+## Confidentialité
+
+Ce serveur ne collecte rien sur vous et n'envoie rien à son auteur. Il tourne sur
+votre machine, ne joint que `data.bnf.fr`, garde ses réponses en mémoire le temps qu'il
+tourne, et n'écrit rien sur le disque. [PRIVACY.md](PRIVACY.md) dit ce qu'une
+requête emporte et quels réglages changent cela.
+
+## Développement
+
+```bash
+npm install
+npm run build:fixtures
+npm test
+npm run check
+```
+
+Les tests s'exécutent sur des fixtures engendrées et n'émettent aucune requête.
+La suite en direct, `npm run test:live`, émet une requête par route et tourne
+chaque nuit contre le service lui-même.
+
+## Contribuer
+
+Les anomalies, les questions et les idées ont leur place dans
+[le suivi d'incidents](https://github.com/smeet666/mcp-databnf/issues). Les
+propositions de modification sont bienvenues ; ouvrir un ticket d'abord aide à
+s'accorder sur la forme du changement. Voir [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Licence
 
-MIT pour ce code. Les métadonnées appartiennent à la Bibliothèque nationale de
-France et sont publiées sous la condition citée plus haut : citer la source, et
-indiquer la date de récupération.
+MIT, voir [LICENSE](LICENSE). Les métadonnées appartiennent à la Bibliothèque
+nationale de France, d'usage libre sous réserve d'indiquer la source et la date
+de récupération.

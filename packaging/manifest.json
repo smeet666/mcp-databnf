@@ -39,27 +39,199 @@
   "tools": [
     {
       "name": "search_authors",
-      "description": "Find a person in the BnF authority file by name."
+      "description": "Find a person in the BnF authority file by name.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "The person's name, such as 'Rimbaud' or 'Arthur Rimbaud'."
+          },
+          "limit": {
+            "default": 10,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "page": {
+            "default": 1,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          }
+        },
+        "required": ["name"],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      }
     },
     {
       "name": "get_author",
-      "description": "Read one person's record: dates, places, alignments."
+      "description": "Read one person's record: dates, places, alignments.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "author_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "The identifier from search_authors, such as 'cb119219976'. A full data.bnf.fr address is accepted too."
+          },
+          "include_depictions": {
+            "default": false,
+            "description": "Include the images data.bnf.fr attaches to the person. A well-known person can carry dozens, so they are left out by default. find_digitised gathers them with everything else.",
+            "type": "boolean"
+          }
+        },
+        "required": ["author_id"],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      }
     },
     {
       "name": "search_works",
-      "description": "Find a work by words in its title."
+      "description": "Find a work by words in its title.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Words from the title, such as 'saison enfer'. Every word given has to appear."
+          },
+          "limit": {
+            "default": 10,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "page": {
+            "default": 1,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          }
+        },
+        "required": ["title"],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      }
     },
     {
       "name": "get_work",
-      "description": "Read one work's record, established or provisional."
+      "description": "Read one work's record, established or provisional.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "work_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "The identifier from search_works, such as 'cb11970626n' or 'temp-work/22d7f68c1a4bdd081ad7ca791fd3b730'."
+          },
+          "include_depictions": {
+            "default": false,
+            "description": "Include the images data.bnf.fr attaches to the work. A well-known work can carry dozens, so they are left out by default. find_digitised gathers them alongside the digitised editions.",
+            "type": "boolean"
+          }
+        },
+        "required": ["work_id"],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      }
     },
     {
       "name": "list_editions",
-      "description": "The published editions of a work, with their imprints."
+      "description": "The published editions of a work, with their imprints.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "work_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "The work identifier, such as 'cb11970626n'."
+          },
+          "limit": {
+            "default": 10,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "page": {
+            "default": 1,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          }
+        },
+        "required": ["work_id"],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      }
+    },
+    {
+      "name": "list_works",
+      "description": "The works a person is credited with, established or provisional.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "author_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "The person identifier from search_authors, such as 'cb119219976'. A full data.bnf.fr address is accepted too."
+          },
+          "limit": {
+            "default": 10,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "page": {
+            "default": 1,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          }
+        },
+        "required": ["author_id"],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      }
     },
     {
       "name": "find_digitised",
-      "description": "Links to the digitised documents attached to a record."
+      "description": "Links to the digitised documents attached to a record.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "A person or work identifier, such as 'cb119219976' or 'cb11970626n'. The argument is named 'id' rather than 'work_id' or 'author_id' because it takes either."
+          },
+          "kind": {
+            "default": "auto",
+            "description": "What you expect the identifier to name. The catalogue is asked either way, and a kind it contradicts is refused rather than followed. 'auto' states no expectation.",
+            "type": "string",
+            "enum": ["auto", "person", "work"]
+          },
+          "limit": {
+            "default": 40,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 200
+          }
+        },
+        "required": ["id"],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      }
     }
   ],
   "compatibility": {

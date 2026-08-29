@@ -45,10 +45,13 @@ describe("the entry points this package declares", () => {
 });
 
 describe("what npm packs", () => {
-  it("carries the built code, the readme, the licence, the changelog and the descriptor", () => {
+  it("carries the built code, the documents a reader needs and the descriptor", () => {
+    // Equality, not presence: a file dropped from this list leaves the
+    // published archive without anything failing.
     expect([...packaged.files].sort()).toEqual([
       "CHANGELOG.md",
       "LICENSE",
+      "PRIVACY.md",
       "README.md",
       "dist",
       "server.json",
