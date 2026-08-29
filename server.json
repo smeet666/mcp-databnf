@@ -19,12 +19,12 @@
     "url": "https://github.com/smeet666/mcp-databnf",
     "source": "github"
   },
-  "version": "2.0.0",
+  "version": "2.1.0",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "mcp-databnf",
-      "version": "2.0.0",
+      "version": "2.1.0",
       "transport": {
         "type": "stdio"
       },
@@ -63,8 +63,8 @@
     },
     {
       "registryType": "mcpb",
-      "identifier": "https://github.com/smeet666/mcp-databnf/releases/download/v2.0.0/mcp-databnf-2.0.0.mcpb",
-      "version": "2.0.0",
+      "identifier": "https://github.com/smeet666/mcp-databnf/releases/download/v2.1.0/mcp-databnf-2.1.0.mcpb",
+      "version": "2.1.0",
       "transport": {
         "type": "stdio"
       }

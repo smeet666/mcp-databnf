@@ -371,3 +371,15 @@ export class BnfClient {
     return this.read(`types:${id.id}`, kindQuery(id), toTypes);
   }
 }
+
+/**
+ * What a caller needs beside the client itself.
+ *
+ * Every route that reads one record takes an `EntityId` rather than a string,
+ * because an identifier built from a guess sends the call to a record that does
+ * not exist and the answer reads as an absence. A program importing this entry
+ * point therefore has to be able to build one, so the reading of an address is
+ * published alongside the client that consumes it.
+ */
+export { parseEntityId } from "./sparql.js";
+export type { EntityId, EntityKind } from "./sparql.js";
