@@ -1,5 +1,12 @@
 # Changelog
 
+## 2.1.1
+
+- **The bundle builds again.** The manifest carried an argument schema on each
+  tool, which the packer refuses: a tool is a name and a description. Nothing
+  the npm package holds changed, and 2.1.0 reached npm without a bundle or a
+  release beside it.
+
 ## 2.1.0
 
 - **The client entry point publishes `parseEntityId` and the `EntityId` type.**
