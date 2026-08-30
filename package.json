@@ -1,7 +1,7 @@
 {
   "name": "mcp-databnf",
   "version": "2.1.2",
-  "description": "MCP server for data.bnf.fr, the Biblioth\u00e8que nationale de France open catalogue. Look up authors, works, editions and the Gallica links attached to them. No API key required.",
+  "description": "MCP server for data.bnf.fr, the Bibliothèque nationale de France open catalogue. Look up authors, works, editions and the Gallica links attached to them. No API key required.",
   "keywords": [
     "mcp",
     "model-context-protocol",
@@ -67,7 +67,8 @@
     "check": "biome ci && prettier --check \"**/*.{md,yml}\"",
     "prepublishOnly": "npm run typecheck && npm run test && npm run build",
     "start": "node dist/index.js",
-    "inspector": "npx @modelcontextprotocol/inspector node dist/index.js"
+    "inspector": "npx @modelcontextprotocol/inspector node dist/index.js",
+    "audit:floors": "node scripts/audit-floors.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",
