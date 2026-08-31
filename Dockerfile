@@ -8,7 +8,7 @@
 # Two stages, so the image carries what running the server needs and nothing
 # that building it needed. It runs as the unprivileged user the base image
 # ships, since a server that only reads a public site has nothing to do as root.
-FROM node:24.19.0-alpine AS build
+FROM node:24.20.0-alpine AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
@@ -16,7 +16,7 @@ COPY tsconfig.json tsup.config.ts ./
 COPY src ./src
 RUN npm run build && npm prune --omit=dev
 
-FROM node:24.19.0-alpine
+FROM node:24.20.0-alpine
 WORKDIR /app
 ENV NODE_ENV=production
 COPY --from=build /app/node_modules ./node_modules
