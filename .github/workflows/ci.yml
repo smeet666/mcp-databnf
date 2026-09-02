@@ -17,7 +17,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 24.20.0
           cache: npm
       - run: npm ci
       # A formatting or lint verdict does not depend on the version of node. In
@@ -41,7 +41,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 24.20.0
       # The published archive carries no lockfile, so a consumer resolves the
       # dependencies from the ranges alone. `npm audit` reads the installed tree
       # and passes a range whose lowest accepted version carries an advisory.
@@ -75,7 +75,7 @@ jobs:
       - uses: actions/checkout@v7
       - uses: actions/setup-node@v7
         with:
-          node-version: 24
+          node-version: 24.20.0
           cache: npm
       - run: npm ci
       # A coverage figure does not depend on the version of node that produced

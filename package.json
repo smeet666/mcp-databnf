@@ -52,7 +52,7 @@
     "server.json"
   ],
   "engines": {
-    "node": ">=24.0.0"
+    "node": ">=24.20.0"
   },
   "mcpName": "io.github.smeet666/mcp-databnf",
   "scripts": {
@@ -72,10 +72,10 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.30.0",
-    "zod": "^4.4.3"
+    "zod": "^4.5.4"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.10",
+    "@biomejs/biome": "2.5.11",
     "@types/node": "24.13.3",
     "@vitest/coverage-v8": "4.1.11",
     "prettier": "3.9.6",
