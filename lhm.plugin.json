@@ -1,0 +1,1561 @@
+{
+  "author": "Damien Bouissou",
+  "authorUrl": "https://github.com/smeet666",
+  "description": "MCP server for data.bnf.fr, the Bibliothèque nationale de France open catalogue. Look up authors, works, editions and the Gallica links attached to them. No API key required.",
+  "homepage": "https://github.com/smeet666/mcp-databnf#readme",
+  "identifier": "smeet666-mcp-databnf",
+  "name": "mcp-databnf",
+  "prompts": [],
+  "resources": [],
+  "tags": [
+    "mcp",
+    "model-context-protocol",
+    "bnf",
+    "data-bnf",
+    "sparql",
+    "linked-data",
+    "bibliography",
+    "authority-records"
+  ],
+  "tools": [
+    {
+      "name": "search_authors",
+      "title": "Find a person in the BnF authority file",
+      "description": "Find a person in the Bibliothèque nationale de France authority file by name, and get the identifier the other tools take. This matches the name the BnF records, so it takes a surname, a full name or both names in either order. It does not read biographies, so it cannot find a person from what they wrote or what they did. It reads the person records and nothing else: an organisation, a conference or a place is outside it, and an answer holding no row says nothing about those. The match is letter for letter, so a name written with other accents or under another transliteration is a different search: try the spellings a library would use before concluding the BnF holds nobody of that name. Several rows can carry one name: the BnF keeps more than one authority record for some people, and many people share a name. Read 'birth_year', 'death_year' and 'role' to tell them apart, and show the caller the choice rather than picking one. Rows come back ordered by the address of the record, which is not an order of relevance. That order is the one the pages are cut along, so paging through a search reaches every match once. One search reads a fixed window of the index. 'index_window_full' says whether that window came back full: when it did, names sit past what was read, 'has_more' being false says where the reading stopped, and another reading of the same search can bring back other rows. Narrow the name to reach further.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "The person's name, such as 'Rimbaud' or 'Arthur Rimbaud'."
+          },
+          "limit": {
+            "default": 10,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "page": {
+            "default": 1,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          }
+        },
+        "required": ["name"],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "The name asked for."
+          },
+          "words_searched": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The terms the index required, each of which has to appear in the name. A word is cut at an apostrophe and at a hyphen before the index sees it, so a name written as one word can appear here as two, and a record carrying the pieces apart is a match."
+          },
+          "authors": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Pass this to get_author, or to find_digitised."
+                },
+                "name": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "The name as data.bnf.fr writes it."
+                },
+                "label": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "The authority heading, which usually carries the dates in brackets."
+                },
+                "birth_year": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "death_year": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "Null when the record states none."
+                },
+                "role": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "What the record says the person did. This field holds a job title far more often than a sentence, and is frequently a single word."
+                },
+                "source_url": {
+                  "type": "string",
+                  "description": "The record's page. Show this when citing it."
+                }
+              },
+              "required": ["id", "name", "label", "birth_year", "death_year", "role", "source_url"],
+              "additionalProperties": false
+            }
+          },
+          "page": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "has_more": {
+            "type": "boolean",
+            "description": "Whether the endpoint held at least one further row beyond this page, within the window the search read off the index. Read it alongside 'index_window_full': false on a full window says where the reading stopped rather than that the file holds nobody else."
+          },
+          "index_window_full": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Whether the fixed window this search reads off the index came back full. True means records carrying these words sit past what was read, so the rows here are a part of the matches and another reading can bring back other rows. False means the window held everything that matched. Null when the endpoint stated no occupancy, which claims nothing either way."
+          },
+          "retrieved_at": {
+            "type": "string",
+            "description": "When these metadata were read from data.bnf.fr, as an ISO 8601 instant. The BnF licence asks for this date to be stated wherever the metadata are shown, so repeat it alongside the source."
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "name",
+          "words_searched",
+          "authors",
+          "page",
+          "has_more",
+          "index_window_full",
+          "retrieved_at",
+          "notes"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "get_author",
+      "title": "Read a person's record",
+      "description": "Read one person's record in the Bibliothèque nationale de France authority file, by the identifier search_authors returns. It carries the dates and places of birth and death, the occupation the record names, the language and country it associates with the person, the field of activity with its Dewey class, and the addresses for the same person in VIAF, IdRef, DBpedia, Wikidata and ISNI. It carries no biography. The field the BnF calls biographical information is a job title on most records and a single word on many, so quote it as what the catalogue states and do not build a life story out of it. It lists no work. list_works walks from this record to the works the catalogue names the person the creator of, and states what that link does and does not reach. 'depictions' are images data.bnf.fr attaches to the person. They are links for a person to open; this server does not read them, and an image can be a page that mentions the person rather than a portrait of them.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "author_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "The identifier from search_authors, such as 'cb119219976'. A full data.bnf.fr address is accepted too."
+          },
+          "include_depictions": {
+            "default": false,
+            "description": "Include the images data.bnf.fr attaches to the person. A well-known person can carry dozens, so they are left out by default. find_digitised gathers them with everything else.",
+            "type": "boolean"
+          }
+        },
+        "required": ["author_id"],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "author": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "name": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "label": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "The authority heading, usually with the dates."
+              },
+              "given_name": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "family_name": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "other_names": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "label": {
+                      "type": "string"
+                    },
+                    "language": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": ["label", "language"],
+                  "additionalProperties": false
+                },
+                "description": "Other headings the record carries, including transliterations and pen names."
+              },
+              "birth_date": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "As published, usually YYYY-MM-DD."
+              },
+              "death_date": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "birth_year": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "death_year": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "birth_place": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "death_place": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "biographical_information": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "What the record states about the person. This is a job title on most records and a single word on many; it is not a biography."
+              },
+              "occupation": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "languages": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "ISO 639-2 codes, such as 'fre'."
+              },
+              "countries": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Country codes, such as 'fr'."
+              },
+              "fields": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Fields of activity in the words of the record."
+              },
+              "dewey_classes": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Dewey classes the fields point at, such as '800' for literature."
+              },
+              "same_as": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                },
+                "description": "Addresses for the same person in other files, grouped by file."
+              },
+              "catalogue_url": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "The address of this record in the BnF general catalogue, as the record itself points at it. Null when the record states none, which is a silence in the record rather than a record the general catalogue lacks: no address is built in its place."
+              },
+              "record_created": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "When the authority record was created."
+              },
+              "record_modified": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "When it was last changed."
+              },
+              "source_url": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "name",
+              "label",
+              "given_name",
+              "family_name",
+              "other_names",
+              "birth_date",
+              "death_date",
+              "birth_year",
+              "death_year",
+              "birth_place",
+              "death_place",
+              "biographical_information",
+              "occupation",
+              "languages",
+              "countries",
+              "fields",
+              "dewey_classes",
+              "same_as",
+              "catalogue_url",
+              "record_created",
+              "record_modified",
+              "source_url"
+            ],
+            "additionalProperties": false
+          },
+          "depictions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "ark": {
+                  "type": "string",
+                  "description": "The Gallica ARK identifying the document."
+                },
+                "url": {
+                  "type": "string",
+                  "description": "The address the catalogue publishes, for a person to open. Read it beside 'rendering': an address asking for a rendering opens that view of the document rather than the document. This server does not read either."
+                },
+                "rendering": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "The view the address asks Gallica for, read off what follows the ARK name in it, such as 'thumbnail' for a small image or 'item' for one leaf. Null when the address names the document itself. This says what was asked for, not what comes back."
+                },
+                "role": {
+                  "type": "string",
+                  "enum": ["reproduction", "ocr", "depiction"],
+                  "description": "'reproduction' is the edition itself digitised. 'ocr' is the text a machine read off it. 'depiction' is an image illustrating the record, which can be a portrait or a page mentioning the subject rather than the work."
+                },
+                "from_id": {
+                  "type": "string",
+                  "description": "The record this link hangs off."
+                },
+                "from_title": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": ["ark", "url", "rendering", "role", "from_id", "from_title"],
+              "additionalProperties": false
+            }
+          },
+          "depiction_count": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "description": "Images on Gallica that the record points at, counted whether or not they were returned. An illustration the record holds elsewhere is not counted, because this server describes Gallica documents and knows nothing about the others."
+          },
+          "retrieved_at": {
+            "type": "string",
+            "description": "When these metadata were read from data.bnf.fr, as an ISO 8601 instant. The BnF licence asks for this date to be stated wherever the metadata are shown, so repeat it alongside the source."
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["author", "depiction_count", "retrieved_at", "notes"],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "search_works",
+      "title": "Find a work by its title",
+      "description": "Find a work in the Bibliothèque nationale de France catalogue by words in its title, and get the identifier get_work and list_editions take. A row matches when its title carries every word given. The index returns no measure of how well a row matches, so the rows are ordered by the address of the record and the work a person would call the obvious answer can sit anywhere in the list or on a later page. A study of a book carries the book's title, so a search for a famous title returns the criticism alongside the work. Read 'creators' to tell them apart. This reads titles and nothing else. Searching a person's name returns the works written about them, whose creators are their critics; list_works is what walks from a person to the works the catalogue names them the creator of. 'status' says whether the BnF has established the work as a record of its own or holds it provisionally under a title it has catalogued. One search reads a fixed window of the index, and that window is read before the works are told apart from everything else the index holds, so even a short list can rest on a full one. 'index_window_full' says which: when it is true, titles sit past what was read, 'has_more' being false says where the reading stopped, and another reading of the same search can bring back other rows. Add a word to the title to reach further.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "Words from the title, such as 'saison enfer'. Every word given has to appear."
+          },
+          "limit": {
+            "default": 10,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "page": {
+            "default": 1,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          }
+        },
+        "required": ["title"],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "title": {
+            "type": "string",
+            "description": "The words asked for."
+          },
+          "words_searched": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "The terms the index required, each of which has to appear in the title. A word is cut at an apostrophe and at a hyphen before the index sees it, so a word given as one can appear here as two, and a record carrying the pieces apart is a match."
+          },
+          "works": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Pass this to get_work, list_editions or find_digitised."
+                },
+                "title": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "date": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "The year the record gives the work, as published."
+                },
+                "creators": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "id": {
+                        "type": "string"
+                      },
+                      "name": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    },
+                    "required": ["id", "name"],
+                    "additionalProperties": false
+                  },
+                  "description": "Everyone the record credits. Empty when the record credits nobody."
+                },
+                "status": {
+                  "type": "string",
+                  "enum": ["established", "provisional"],
+                  "description": "'established' is a work the BnF has settled as a record of its own. 'provisional' is a title it holds while a cataloguer settles it, whose identifier can change."
+                },
+                "source_url": {
+                  "type": "string"
+                }
+              },
+              "required": ["id", "title", "date", "creators", "status", "source_url"],
+              "additionalProperties": false
+            }
+          },
+          "page": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "has_more": {
+            "type": "boolean",
+            "description": "Whether the endpoint held at least one further row beyond this page, within the window the search read off the index. Read it alongside 'index_window_full': false on a full window says where the reading stopped rather than that the catalogue holds nothing else."
+          },
+          "index_window_full": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "description": "Whether the fixed window this search reads off the index came back full. The window is read before the works are separated from the rest of the index, so a short list can rest on a full window. True means titles carrying these words sit past what was read, and another reading can bring back other rows. False means the window held everything that matched. Null when the endpoint stated no occupancy."
+          },
+          "retrieved_at": {
+            "type": "string",
+            "description": "When these metadata were read from data.bnf.fr, as an ISO 8601 instant. The BnF licence asks for this date to be stated wherever the metadata are shown, so repeat it alongside the source."
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "title",
+          "words_searched",
+          "works",
+          "page",
+          "has_more",
+          "index_window_full",
+          "retrieved_at",
+          "notes"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "get_work",
+      "title": "Read a work's record",
+      "description": "Read one work's record in the Bibliothèque nationale de France catalogue, by the identifier search_works returns. It carries the title, everyone the record credits, the date the BnF gives the work, its language, its form and its subject with the Dewey class. 'forms' holds the work-form vocabulary's own terms, which carry no label in this dataset, so some read as words and some do not. A record stating none has a form the catalogue does not state. 'status' says whether the record is established or provisional, and 'status_statement' repeats what the catalogue itself states. A provisional identifier can change, so cite an established one where there is a choice. 'expression_count' counts the expressions the record links, which is not a count of published editions: use list_editions for those.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "work_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "The identifier from search_works, such as 'cb11970626n' or 'temp-work/22d7f68c1a4bdd081ad7ca791fd3b730'."
+          },
+          "include_depictions": {
+            "default": false,
+            "description": "Include the images data.bnf.fr attaches to the work. A well-known work can carry dozens, so they are left out by default. find_digitised gathers them alongside the digitised editions.",
+            "type": "boolean"
+          }
+        },
+        "required": ["work_id"],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "work": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string"
+              },
+              "title": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "label": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "date": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "The date the record gives the work, as published."
+              },
+              "first_year": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "creators": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "anyOf": [
+                        {
+                          "type": "string"
+                        },
+                        {
+                          "type": "null"
+                        }
+                      ]
+                    }
+                  },
+                  "required": ["id", "name"],
+                  "additionalProperties": false
+                }
+              },
+              "languages": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "ISO 639-2 codes."
+              },
+              "forms": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Terms of the BnF work-form vocabulary, as the terms themselves. The vocabulary publishes no label for them here, so they are not translated: some read as words, such as 'poesi', and some do not, such as 'te'. An empty list is a form the record does not state."
+              },
+              "subjects": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                },
+                "description": "Subjects in the words of the record."
+              },
+              "dewey_classes": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "status": {
+                "type": "string",
+                "enum": ["established", "provisional"]
+              },
+              "status_statement": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "What the record itself states, such as 'fully established' or 'provisional'."
+              },
+              "expression_count": {
+                "anyOf": [
+                  {
+                    "type": "integer",
+                    "minimum": -9007199254740991,
+                    "maximum": 9007199254740991
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "Expressions the record links: translations, adaptations, recordings. This is not a count of published editions. Null when the record was longer than one query reads, since the number would then be the ceiling rather than the count."
+              },
+              "same_as": {
+                "type": "object",
+                "propertyNames": {
+                  "type": "string"
+                },
+                "additionalProperties": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  }
+                }
+              },
+              "catalogue_url": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ],
+                "description": "The address of this record in the BnF general catalogue, as the record itself points at it. Null when the record states none, which is the ordinary case on work records: it is a silence in the record rather than a record the general catalogue lacks, and no address is built in its place."
+              },
+              "source_url": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "title",
+              "label",
+              "date",
+              "first_year",
+              "creators",
+              "languages",
+              "forms",
+              "subjects",
+              "dewey_classes",
+              "status",
+              "status_statement",
+              "expression_count",
+              "same_as",
+              "catalogue_url",
+              "source_url"
+            ],
+            "additionalProperties": false
+          },
+          "depictions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "ark": {
+                  "type": "string",
+                  "description": "The Gallica ARK identifying the document."
+                },
+                "url": {
+                  "type": "string",
+                  "description": "The address the catalogue publishes, for a person to open. Read it beside 'rendering': an address asking for a rendering opens that view of the document rather than the document. This server does not read either."
+                },
+                "rendering": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "The view the address asks Gallica for, read off what follows the ARK name in it, such as 'thumbnail' for a small image or 'item' for one leaf. Null when the address names the document itself. This says what was asked for, not what comes back."
+                },
+                "role": {
+                  "type": "string",
+                  "enum": ["reproduction", "ocr", "depiction"],
+                  "description": "'reproduction' is the edition itself digitised. 'ocr' is the text a machine read off it. 'depiction' is an image illustrating the record, which can be a portrait or a page mentioning the subject rather than the work."
+                },
+                "from_id": {
+                  "type": "string",
+                  "description": "The record this link hangs off."
+                },
+                "from_title": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": ["ark", "url", "rendering", "role", "from_id", "from_title"],
+              "additionalProperties": false
+            }
+          },
+          "depiction_count": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "description": "Images on Gallica that the record points at, counted whether or not they were returned."
+          },
+          "retrieved_at": {
+            "type": "string",
+            "description": "When these metadata were read from data.bnf.fr, as an ISO 8601 instant. The BnF licence asks for this date to be stated wherever the metadata are shown, so repeat it alongside the source."
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["work", "depiction_count", "retrieved_at", "notes"],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "list_editions",
+      "title": "List the editions of a work",
+      "description": "List the published editions of one work in the Bibliothèque nationale de France catalogue, by the identifier search_works or get_work returns. Each row carries the publisher, the place, the year, the edition statement, the extent in the words of the record, the ISBN when there is one, and the record in the BnF general catalogue. An edition that has been digitised carries a link under 'digitised'. That link says a copy exists at that address; this server never opens it, so it cannot say whether the document is readable, complete, or free to reuse. Rows are ordered by the address the catalogue gives each edition, which is neither by date nor by importance.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "work_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "The work identifier, such as 'cb11970626n'."
+          },
+          "limit": {
+            "default": 10,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "page": {
+            "default": 1,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          }
+        },
+        "required": ["work_id"],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "work_id": {
+            "type": "string"
+          },
+          "editions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "The edition's own identifier in the BnF catalogue."
+                },
+                "title": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "The title as this edition carries it."
+                },
+                "date": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "The date as published, which can be a phrase such as '[s.d.]' for an undated one."
+                },
+                "year": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "The year, when the record states one as a number."
+                },
+                "publisher": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "The publisher as the record writes it, square brackets included. A bracketed part is the cataloguer speaking rather than the item: '[s.n.]' is a publisher the item does not name, and a role such as '[éd., distrib.]' is what the named house did rather than part of its name."
+                },
+                "place": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "The place of publication as the record writes it, square brackets included. '[Paris]' is a place the cataloguer supplied because the item does not print one, and '[S.l.]' is an item stating no place at all."
+                },
+                "edition_statement": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "Such as a numbered or revised edition."
+                },
+                "extent": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "The extent in the words of the record: pages, volumes, discs."
+                },
+                "isbn": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "note": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "What the cataloguer wrote, as published."
+                },
+                "catalogue_url": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "digitised": {
+                  "type": "array",
+                  "items": {
+                    "type": "object",
+                    "properties": {
+                      "ark": {
+                        "type": "string",
+                        "description": "The Gallica ARK identifying the document."
+                      },
+                      "url": {
+                        "type": "string",
+                        "description": "The address the catalogue publishes, for a person to open. Read it beside 'rendering': an address asking for a rendering opens that view of the document rather than the document. This server does not read either."
+                      },
+                      "rendering": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ],
+                        "description": "The view the address asks Gallica for, read off what follows the ARK name in it, such as 'thumbnail' for a small image or 'item' for one leaf. Null when the address names the document itself. This says what was asked for, not what comes back."
+                      },
+                      "role": {
+                        "type": "string",
+                        "enum": ["reproduction", "ocr", "depiction"],
+                        "description": "'reproduction' is the edition itself digitised. 'ocr' is the text a machine read off it. 'depiction' is an image illustrating the record, which can be a portrait or a page mentioning the subject rather than the work."
+                      },
+                      "from_id": {
+                        "type": "string",
+                        "description": "The record this link hangs off."
+                      },
+                      "from_title": {
+                        "anyOf": [
+                          {
+                            "type": "string"
+                          },
+                          {
+                            "type": "null"
+                          }
+                        ]
+                      }
+                    },
+                    "required": ["ark", "url", "rendering", "role", "from_id", "from_title"],
+                    "additionalProperties": false
+                  },
+                  "description": "Digitised copies of this edition, as links. An empty list means the catalogue records none here, not that none exists."
+                },
+                "source_url": {
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "title",
+                "date",
+                "year",
+                "publisher",
+                "place",
+                "edition_statement",
+                "extent",
+                "isbn",
+                "note",
+                "catalogue_url",
+                "digitised",
+                "source_url"
+              ],
+              "additionalProperties": false
+            }
+          },
+          "page": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "has_more": {
+            "type": "boolean"
+          },
+          "digitised_count": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991,
+            "description": "Editions on this page carrying at least one link."
+          },
+          "retrieved_at": {
+            "type": "string",
+            "description": "When these metadata were read from data.bnf.fr, as an ISO 8601 instant. The BnF licence asks for this date to be stated wherever the metadata are shown, so repeat it alongside the source."
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "work_id",
+          "editions",
+          "page",
+          "has_more",
+          "digitised_count",
+          "retrieved_at",
+          "notes"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "list_works",
+      "title": "List the works a person is credited with",
+      "description": "List the works the Bibliothèque nationale de France catalogue names one person the creator of, by the identifier search_authors returns. This is the tool for 'what did this person write'. Each row carries the title, the date the record gives the work, the form codes the catalogue points at, whether the record is established or provisional, and the identifier get_work, list_editions and find_digitised take. It is not a bibliography. It reports one link the catalogue holds, and the catalogue credits a person on a record in other ways and holds editions whose work it has never established, so a work missing here is not a work the person did not write. The form codes are the work-form vocabulary's own terms and carry no label in this dataset, so some read as words and some do not. A work stating no code has a form the catalogue does not state, so keeping the rows carrying one code finds the works that declare it and never all the works of that form. Rows are ordered by the address the catalogue gives each work, which is neither chronological nor an order of importance. No total is reported, because the catalogue counts nothing here and a count would read as a measure of what the person wrote.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "author_id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "The person identifier from search_authors, such as 'cb119219976'. A full data.bnf.fr address is accepted too."
+          },
+          "limit": {
+            "default": 10,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 50
+          },
+          "page": {
+            "default": 1,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 100
+          }
+        },
+        "required": ["author_id"],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "author_id": {
+            "type": "string"
+          },
+          "works": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "description": "Pass this to get_work, list_editions or find_digitised."
+                },
+                "title": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                },
+                "date": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "The date the record gives the work, as published. It dates the work rather than an edition of it."
+                },
+                "year": {
+                  "anyOf": [
+                    {
+                      "type": "integer",
+                      "minimum": -9007199254740991,
+                      "maximum": 9007199254740991
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "The same date as a number, when the record has one."
+                },
+                "forms": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Terms of the BnF work-form vocabulary, as the terms themselves. The vocabulary publishes no label for them here, so they are not translated: some read as words, such as 'roman', and some do not, such as 'te'. An empty list is a form the record does not state, not a work without one."
+                },
+                "status": {
+                  "type": "string",
+                  "enum": ["established", "provisional"],
+                  "description": "'established' is a work the BnF has settled as a record of its own. 'provisional' is a title it holds while a cataloguer settles it, whose identifier can change."
+                },
+                "source_url": {
+                  "type": "string"
+                }
+              },
+              "required": ["id", "title", "date", "year", "forms", "status", "source_url"],
+              "additionalProperties": false
+            }
+          },
+          "page": {
+            "type": "integer",
+            "minimum": -9007199254740991,
+            "maximum": 9007199254740991
+          },
+          "has_more": {
+            "type": "boolean"
+          },
+          "retrieved_at": {
+            "type": "string",
+            "description": "When these metadata were read from data.bnf.fr, as an ISO 8601 instant. The BnF licence asks for this date to be stated wherever the metadata are shown, so repeat it alongside the source."
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": ["author_id", "works", "page", "has_more", "retrieved_at", "notes"],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    },
+    {
+      "name": "find_digitised",
+      "title": "Gather the digitised documents attached to a record",
+      "description": "Gather the digitised documents the Bibliothèque nationale de France catalogue attaches to one person or one work, and return them as links. Give the identifier of either; the tool asks the catalogue what kind of record it is and follows the right path. For a work it walks the editions; for a person it takes the images on the record and the digitised editions of the works they are credited with. The 'kind' returned is what the catalogue types the record as. Every result is a link for someone to open. This server reads the BnF catalogue and never requests gallica.bnf.fr, so it reports nothing about what is at the other end: not whether the document opens, not what it contains, not on what terms it may be reused. It returns links and nothing else: no publisher, no date, no ISBN. Use list_editions when which edition a copy belongs to matters. A 'depiction' illustrates a record and can be a page that merely mentions the subject. A 'reproduction' is an edition digitised. An 'ocr' link names a machine-read text of a document, which this server does not fetch.",
+      "inputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 200,
+            "description": "A person or work identifier, such as 'cb119219976' or 'cb11970626n'. The argument is named 'id' rather than 'work_id' or 'author_id' because it takes either."
+          },
+          "kind": {
+            "default": "auto",
+            "description": "What you expect the identifier to name. The catalogue is asked either way, and a kind it contradicts is refused rather than followed. 'auto' states no expectation.",
+            "type": "string",
+            "enum": ["auto", "person", "work"]
+          },
+          "limit": {
+            "default": 40,
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 200
+          }
+        },
+        "required": ["id"],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "outputSchema": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "kind": {
+            "type": "string",
+            "enum": ["person", "work"],
+            "description": "What the catalogue types this record as."
+          },
+          "links": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "ark": {
+                  "type": "string",
+                  "description": "The Gallica ARK identifying the document."
+                },
+                "url": {
+                  "type": "string",
+                  "description": "The address the catalogue publishes, for a person to open. Read it beside 'rendering': an address asking for a rendering opens that view of the document rather than the document. This server does not read either."
+                },
+                "rendering": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "description": "The view the address asks Gallica for, read off what follows the ARK name in it, such as 'thumbnail' for a small image or 'item' for one leaf. Null when the address names the document itself. This says what was asked for, not what comes back."
+                },
+                "role": {
+                  "type": "string",
+                  "enum": ["reproduction", "ocr", "depiction"],
+                  "description": "'reproduction' is the edition itself digitised. 'ocr' is the text a machine read off it. 'depiction' is an image illustrating the record, which can be a portrait or a page mentioning the subject rather than the work."
+                },
+                "from_id": {
+                  "type": "string",
+                  "description": "The record this link hangs off."
+                },
+                "from_title": {
+                  "anyOf": [
+                    {
+                      "type": "string"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ]
+                }
+              },
+              "required": ["ark", "url", "rendering", "role", "from_id", "from_title"],
+              "additionalProperties": false
+            }
+          },
+          "links_returned_by_role": {
+            "type": "object",
+            "properties": {
+              "reproduction": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "ocr": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              },
+              "depiction": {
+                "type": "integer",
+                "minimum": -9007199254740991,
+                "maximum": 9007199254740991
+              }
+            },
+            "required": ["reproduction", "ocr", "depiction"],
+            "additionalProperties": false,
+            "description": "How many of the links in this answer carry each role. These count the links returned here, which is neither a count of documents nor a count of what the catalogue attaches: several links can name one document, and 'has_more' says when links were left out."
+          },
+          "has_more": {
+            "type": "boolean"
+          },
+          "retrieved_at": {
+            "type": "string",
+            "description": "When these metadata were read from data.bnf.fr, as an ISO 8601 instant. The BnF licence asks for this date to be stated wherever the metadata are shown, so repeat it alongside the source."
+          },
+          "notes": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        },
+        "required": [
+          "id",
+          "kind",
+          "links",
+          "links_returned_by_role",
+          "has_more",
+          "retrieved_at",
+          "notes"
+        ],
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "additionalProperties": false
+      },
+      "annotations": {
+        "readOnlyHint": true,
+        "destructiveHint": false,
+        "idempotentHint": true,
+        "openWorldHint": true
+      },
+      "execution": {
+        "taskSupport": "forbidden"
+      }
+    }
+  ],
+  "version": "2.1.2"
+}
