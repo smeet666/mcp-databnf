@@ -9,6 +9,13 @@ on:
     types: [completed]
   workflow_dispatch:
 
+# One registry entry at a time for a given tag, for the reason the publish
+# workflow states: a run that arrives twice would offer the registry the same
+# version twice.
+concurrency:
+  group: publish-registry-${{ github.event.workflow_run.head_branch || github.ref }}
+  cancel-in-progress: false
+
 jobs:
   registry:
     runs-on: ubuntu-latest
