@@ -4,6 +4,19 @@ on:
   push:
     tags: ["v*"]
 
+# One release at a time for a given tag.
+#
+# A tag push can be delivered more than once, and two runs of this workflow then
+# race each other to npm: one publishes and the other is answered with a 409,
+# which leaves a red run standing over a release that went out correctly. A red
+# that means nothing is what teaches a reader to ignore red.
+#
+# Queued rather than cancelled, so the second run reaches the step that finds
+# the version already published and says so.
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   publish:
     runs-on: ubuntu-latest
