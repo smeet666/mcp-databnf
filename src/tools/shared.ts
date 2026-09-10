@@ -33,7 +33,7 @@ export function retrievalDay(retrievedAt: string): string {
 
 export function attribution(retrievedAt: string, sourceUrl?: string): string {
   const credit = `Source: ${SOURCE_NAME}, retrieved ${retrievalDay(retrievedAt)}`;
-  return sourceUrl ? `${credit} — ${sourceUrl}` : credit;
+  return sourceUrl ? `${credit} (${sourceUrl})` : credit;
 }
 
 export interface ToolResult {
