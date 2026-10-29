@@ -1,5 +1,14 @@
 # Changelog
 
+## 2.2.0
+
+- **Node.js 24.22.1 or later**, inside the Node.js 24 line. The package, the
+  extension manifest and the image all declare it.
+- **zod `^4.6.7`.** Below 4.6.6, zod can exhaust memory while
+  validating oversized constrained collections, and the range accepts none of
+  those versions.
+- **Dependency floors:** `@modelcontextprotocol/sdk` `^1.32.2`.
+
 ## 2.1.2
 
 - **Every tool is documented, with its arguments and what its answer carries.**

@@ -154,7 +154,7 @@ export interface CatalogueEndpoint extends FakeEndpoint {
 
 export function catalogueEndpoint(entityIris: readonly string[]): CatalogueEndpoint {
   const requests: RecordedRequest[] = [];
-  const sorted = [...entityIris].sort();
+  const sorted = [...entityIris].sort((a, b) => Number(a > b) - Number(a < b));
 
   const fetchImpl = (async (input: string | URL | Request, init?: RequestInit) => {
     const url = addressOf(input);

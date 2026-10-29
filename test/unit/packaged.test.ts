@@ -48,7 +48,7 @@ describe("what npm packs", () => {
   it("carries the built code, the documents a reader needs and the descriptor", () => {
     // Equality, not presence: a file dropped from this list leaves the
     // published archive without anything failing.
-    expect([...packaged.files].sort()).toEqual([
+    expect([...packaged.files].sort((a, b) => Number(a > b) - Number(a < b))).toEqual([
       "CHANGELOG.md",
       "LICENSE",
       "PRIVACY.md",

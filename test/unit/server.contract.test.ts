@@ -43,7 +43,9 @@ function registered() {
 
 describe("the tools a client is offered", () => {
   it("are the seven this server has, under the names it documents", () => {
-    expect(Object.keys(registered()).sort()).toEqual([...TOOLS].sort());
+    expect(Object.keys(registered()).sort((a, b) => Number(a > b) - Number(a < b))).toEqual(
+      [...TOOLS].sort((a, b) => Number(a > b) - Number(a < b)),
+    );
   });
 
   it("each declare that they only read", () => {
