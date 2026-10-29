@@ -170,7 +170,7 @@ describe("every tool, driven with records full of Gallica addresses", () => {
     expect(ocr).toHaveLength(1);
     // What the record carries is the address of the text and nothing else: the
     // shape has no field a passage could arrive in.
-    expect(Object.keys(ocr[0]!).sort()).toEqual([
+    expect(Object.keys(ocr[0]!).sort((a, b) => Number(a > b) - Number(a < b))).toEqual([
       "ark",
       "from_id",
       "from_title",

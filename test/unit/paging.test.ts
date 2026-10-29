@@ -112,7 +112,7 @@ describe.each(LISTINGS)("paging through $name", (listing) => {
   it("leaves no entity out of the walk", async () => {
     const endpoint = catalogueEndpoint(CORPUS);
     const seen = await walk(listing, 4);
-    expect([...seen].sort()).toEqual(endpoint.corpusOrder());
+    expect([...seen].sort((a, b) => Number(a > b) - Number(a < b))).toEqual(endpoint.corpusOrder());
   });
 
   it("reaches as many entities as one large page holds", async () => {

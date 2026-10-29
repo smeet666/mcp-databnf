@@ -1,5 +1,5 @@
 {
-  "$schema": "https://biomejs.dev/schemas/2.5.12/schema.json",
+  "$schema": "https://biomejs.dev/schemas/2.6.3/schema.json",
   "vcs": {
     "enabled": true,
     "clientKind": "git",
@@ -204,7 +204,21 @@
         "useWhile": {
           "level": "error",
           "fix": "safe"
-        }
+        },
+        "noExcessiveNestedCallbacks": "error",
+        "noUnnecessaryTemplateExpression": {
+          "level": "error",
+          "fix": "safe"
+        },
+        "useArraySome": {
+          "level": "error",
+          "fix": "unsafe"
+        },
+        "useMathMinMax": {
+          "level": "error",
+          "fix": "unsafe"
+        },
+        "useRegexpTest": "error"
       },
       "correctness": {
         "noConstAssign": {
@@ -298,42 +312,23 @@
       },
       "nursery": {
         "noBaseToString": "error",
-        "noExcessiveNestedCallbacks": "error",
         "noExtendNative": "error",
         "noFloatingPromises": "error",
-        "noIdenticalTestTitle": "error",
         "noImpliedEval": "error",
-        "noLoopFunc": "error",
         "noMisusedPromises": "error",
         "noNegationInEqualityCheck": "error",
-        "noUnnecessaryTemplateExpression": {
-          "level": "error",
-          "fix": "safe"
-        },
         "noUnsafePlusOperands": "error",
         "noUselessTypeConversion": "error",
-        "useArraySome": {
-          "level": "error",
-          "fix": "unsafe"
-        },
         "useAwaitThenable": "error",
         "useDisposables": "error",
         "useExhaustiveSwitchCases": "error",
-        "useImportsFirst": "error",
         "useIncludes": "error",
-        "useMathMinMax": {
-          "level": "error",
-          "fix": "unsafe"
-        },
         "useNullishCoalescing": "error",
         "useRegexpExec": "error",
-        "useRegexpTest": "error",
         "useStringStartsEndsWith": {
           "level": "error",
           "fix": "unsafe"
-        },
-        "useThisInClassMethods": "error",
-        "useVarsOnTop": "error"
+        }
       },
       "performance": {
         "noAccumulatingSpread": "error",
@@ -527,7 +522,10 @@
         },
         "useThrowOnlyError": "error",
         "useTrimStartEnd": "error",
-        "useUnifiedTypeSignatures": "error"
+        "useUnifiedTypeSignatures": "error",
+        "useImportsFirst": "error",
+        "useThisInClassMethods": "error",
+        "useVarsOnTop": "error"
       },
       "suspicious": {
         "noApproximativeNumericConstant": {
@@ -707,7 +705,9 @@
           }
         },
         "useStaticResponseMethods": "error",
-        "useStrictMode": "error"
+        "useStrictMode": "error",
+        "noIdenticalTestTitle": "error",
+        "noLoopFunc": "error"
       }
     }
   },
