@@ -72,6 +72,21 @@ jobs:
             "
           fi
       - run: mcp-publisher login github-oidc
+      # The registry asks npm for the version before accepting the entry, and
+      # npm serves a version a while after its publish completes. Publishing
+      # inside that interval is refused, and nothing retries it.
+      - name: Wait until npm serves this version
+        run: |
+          package=$(node -p "require('./package.json').name")
+          version=$(node -p "require('./package.json').version")
+          for attempt in $(seq 1 30); do
+            if curl -sf -o /dev/null "https://registry.npmjs.org/$package/$version"; then
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "npm does not serve $package $version after five minutes." >&2
+          exit 1
       # Same reason as the npm step: a tag can be recreated, and the registry
       # rejects a duplicate version rather than treating it as a no-op.
       - name: Publish unless the registry already has this version
