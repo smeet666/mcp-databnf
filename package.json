@@ -77,10 +77,10 @@
   "devDependencies": {
     "@biomejs/biome": "2.6.4",
     "@types/node": "24.19.2",
-    "@vitest/coverage-v8": "5.0.5",
+    "@vitest/coverage-v8": "5.1.0",
     "prettier": "3.9.10",
     "tsup": "9.0.0",
     "typescript": "5.9.3",
-    "vitest": "5.0.5"
+    "vitest": "5.1.0"
   }
 }
